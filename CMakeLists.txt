@@ -33,6 +33,7 @@ endfunction()
 
 add_library(ts_common STATIC
   src/common/timestamp.cpp
+  src/common/unique_fd.cpp
 )
 target_include_directories(ts_common PUBLIC include)
 target_compile_features(ts_common PUBLIC cxx_std_17)
@@ -48,6 +49,17 @@ target_include_directories(ts_domain PUBLIC include)
 target_compile_features(ts_domain PUBLIC cxx_std_17)
 target_link_libraries(ts_domain PUBLIC ts_common nlohmann_json::nlohmann_json)
 ts_enable_project_warnings(ts_domain)
+
+add_library(ts_io STATIC
+  src/io/event_fd.cpp
+  src/io/event_loop.cpp
+  src/io/signal_fd.cpp
+  src/io/timer_fd.cpp
+)
+target_include_directories(ts_io PUBLIC include)
+target_compile_features(ts_io PUBLIC cxx_std_17)
+target_link_libraries(ts_io PUBLIC ts_common)
+ts_enable_project_warnings(ts_io)
 
 if(BUILD_TESTING)
   find_package(GTest 1.11 REQUIRED)
@@ -71,4 +83,36 @@ if(BUILD_TESTING)
   )
   ts_enable_project_warnings(ts_milestone1_tests)
   gtest_discover_tests(ts_milestone1_tests PROPERTIES LABELS unit)
+
+  add_executable(ts_milestone2_unit_tests
+    tests/unit/unique_fd_test.cpp
+  )
+  target_link_libraries(
+    ts_milestone2_unit_tests
+    PRIVATE
+      ts_common
+      GTest::gtest_main
+  )
+  ts_enable_project_warnings(ts_milestone2_unit_tests)
+  gtest_discover_tests(ts_milestone2_unit_tests PROPERTIES LABELS unit)
+
+  add_executable(ts_milestone2_tests
+    tests/component/event_loop_test.cpp
+    tests/component/io_stress_test.cpp
+    tests/component/linux_fd_test.cpp
+    tests/component/wakeup_channel_test.cpp
+  )
+  target_link_libraries(
+    ts_milestone2_tests
+    PRIVATE
+      ts_io
+      GTest::gtest_main
+      Threads::Threads
+  )
+  ts_enable_project_warnings(ts_milestone2_tests)
+  gtest_discover_tests(
+    ts_milestone2_tests
+    PROPERTIES LABELS component
+    DISCOVERY_TIMEOUT 30
+  )
 endif()
