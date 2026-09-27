@@ -61,6 +61,16 @@ target_compile_features(ts_io PUBLIC cxx_std_17)
 target_link_libraries(ts_io PUBLIC ts_common)
 ts_enable_project_warnings(ts_io)
 
+add_library(ts_runtime STATIC
+  src/runtime/prepared_exec.cpp
+  src/runtime/process_handle.cpp
+  src/runtime/process_runtime.cpp
+)
+target_include_directories(ts_runtime PUBLIC include)
+target_compile_features(ts_runtime PUBLIC cxx_std_17)
+target_link_libraries(ts_runtime PUBLIC ts_common ts_io)
+ts_enable_project_warnings(ts_runtime)
+
 if(BUILD_TESTING)
   find_package(GTest 1.11 REQUIRED)
   include(GoogleTest)
@@ -113,6 +123,47 @@ if(BUILD_TESTING)
   gtest_discover_tests(
     ts_milestone2_tests
     PROPERTIES LABELS component
+    DISCOVERY_TIMEOUT 30
+  )
+
+  add_executable(ts_runtime_test_helper
+    tests/helpers/runtime_helper.cpp
+  )
+  target_compile_features(ts_runtime_test_helper PRIVATE cxx_std_17)
+  ts_enable_project_warnings(ts_runtime_test_helper)
+
+  add_executable(ts_milestone4_unit_tests
+    tests/unit/prepared_exec_test.cpp
+    tests/unit/process_handle_test.cpp
+  )
+  target_link_libraries(
+    ts_milestone4_unit_tests
+    PRIVATE
+      ts_runtime
+      GTest::gtest_main
+  )
+  ts_enable_project_warnings(ts_milestone4_unit_tests)
+  gtest_discover_tests(ts_milestone4_unit_tests PROPERTIES LABELS runtime)
+
+  add_executable(ts_milestone4_tests
+    tests/component/process_runtime_test.cpp
+  )
+  target_link_libraries(
+    ts_milestone4_tests
+    PRIVATE
+      ts_runtime
+      GTest::gtest_main
+      Threads::Threads
+  )
+  target_compile_definitions(
+    ts_milestone4_tests
+    PRIVATE TS_RUNTIME_HELPER_PATH="$<TARGET_FILE:ts_runtime_test_helper>"
+  )
+  add_dependencies(ts_milestone4_tests ts_runtime_test_helper)
+  ts_enable_project_warnings(ts_milestone4_tests)
+  gtest_discover_tests(
+    ts_milestone4_tests
+    PROPERTIES LABELS runtime
     DISCOVERY_TIMEOUT 30
   )
 endif()
