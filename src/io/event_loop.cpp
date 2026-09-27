@@ -3,6 +3,7 @@
 #include <array>
 #include <cerrno>
 #include <exception>
+#include <fcntl.h>
 #include <limits>
 #include <string>
 #include <system_error>
@@ -136,7 +137,21 @@ common::Result<void> EventLoop::remove(const RegistrationToken& token) {
     }
 
     if (epoll_control(epoll_fd_.get(), EPOLL_CTL_DEL, token.fd, nullptr) == -1) {
-        return common::Result<void>::failure(errno_message("epoll_ctl(DEL)", errno));
+        const int delete_error = errno;
+        bool already_absent = delete_error == ENOENT;
+
+        if (delete_error == EBADF) {
+            int descriptor_flags = -1;
+            do {
+                descriptor_flags = ::fcntl(token.fd, F_GETFD);
+            } while (descriptor_flags == -1 && errno == EINTR);
+            already_absent = descriptor_flags == -1 && errno == EBADF;
+        }
+
+        if (!already_absent) {
+            return common::Result<void>::failure(
+                errno_message("epoll_ctl(DEL)", delete_error));
+        }
     }
     keys_by_fd_.erase(fd_iterator);
     registrations_.erase(iterator);
@@ -207,19 +222,18 @@ common::Result<std::size_t> EventLoop::dispatch_batch(const epoll_event* events,
 
         const RegistrationToken token = iterator->second.token;
         std::string callback_failure;
-        {
-            // The copy keeps a self-removing callback alive through its invocation. Its scope
-            // ends before deferred destruction is allowed to run.
+        try {
+            // The copy keeps a self-removing callback alive through its invocation. Both its
+            // creation and invocation share one exception boundary, and its scope ends before
+            // deferred destruction is allowed to run.
             Callback callback = iterator->second.callback;
-            try {
-                callback(token, events[index].events);
-            } catch (const std::exception& exception) {
-                callback_failure =
-                    "EventLoop callback threw: " + std::string(exception.what());
-            } catch (...) {
-                callback_failure =
-                    "EventLoop callback threw a non-standard exception";
-            }
+            callback(token, events[index].events);
+        } catch (const std::exception& exception) {
+            callback_failure =
+                "EventLoop callback threw: " + std::string(exception.what());
+        } catch (...) {
+            callback_failure =
+                "EventLoop callback threw a non-standard exception";
         }
         if (!callback_failure.empty()) {
             const auto deferred = run_deferred_actions();
@@ -241,16 +255,26 @@ common::Result<std::size_t> EventLoop::dispatch_batch(const epoll_event* events,
 common::Result<void> EventLoop::run_deferred_actions() {
     std::vector<DeferredAction> actions;
     actions.swap(deferred_actions_);
-    try {
-        for (auto& action : actions) {
+
+    std::string first_failure;
+    for (auto& action : actions) {
+        try {
             action();
+        } catch (const std::exception& exception) {
+            if (first_failure.empty()) {
+                first_failure =
+                    "deferred EventLoop action threw: " + std::string(exception.what());
+            }
+        } catch (...) {
+            if (first_failure.empty()) {
+                first_failure =
+                    "deferred EventLoop action threw a non-standard exception";
+            }
         }
-    } catch (const std::exception& exception) {
-        return common::Result<void>::failure(
-            "deferred EventLoop action threw: " + std::string(exception.what()));
-    } catch (...) {
-        return common::Result<void>::failure(
-            "deferred EventLoop action threw a non-standard exception");
+    }
+
+    if (!first_failure.empty()) {
+        return common::Result<void>::failure(std::move(first_failure));
     }
     return common::Result<void>::success();
 }
