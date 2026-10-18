@@ -67,5 +67,11 @@ TEST(OutputQueue, SlotLimitsRemainIndependentOfByteLimitsAndPartialProgress) {
     ASSERT_TRUE(queue.advance(1)); ASSERT_TRUE(queue.enqueue(control("f")));
     EXPECT_EQ(drain(queue),"flog");
 }
+TEST(OutputQueue, ZeroByteEagainYieldRemainsAPriorityBoundary) {
+    OutputQueue queue; ASSERT_TRUE(queue.enqueue(log("log",1,1))); EXPECT_EQ(queue.front(),"log");
+    queue.retry_boundary(); ASSERT_TRUE(queue.enqueue(control("ACK"))); EXPECT_EQ(queue.front(),"ACK");
+    ASSERT_TRUE(queue.advance(1)); queue.retry_boundary();
+    ASSERT_TRUE(queue.enqueue(control("NEW"))); EXPECT_EQ(drain(queue),"CKNEWlog");
+}
 } // namespace
 } // namespace ts::net

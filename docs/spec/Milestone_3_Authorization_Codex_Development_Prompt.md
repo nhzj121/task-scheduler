@@ -2,9 +2,9 @@
 
 ## Linux C++ Distributed Task Scheduler
 
-**Authorized milestone:** Milestone 3 — Frozen framing, protocol schemas, and TCP transport  
-**Authorized branch:** `milestone-3-protocol-net`  
-**Repository:** `nhzj121/task-scheduler`  
+**Authorized milestone:** Milestone 3 — Frozen framing, protocol schemas, and TCP transport
+**Authorized branch:** `milestone-3-protocol-net`
+**Repository:** `nhzj121/task-scheduler`
 **Reference baseline:** `main` at `2600605d2a576eb056b627af65de02efb79e82f4` (verified GitHub remote at authorization preparation)
 
 ---
@@ -162,8 +162,8 @@ If any applicable frozen documents disagree on semantics, **STOP**, identify the
 
 The frozen M3 definition is:
 
-> **Future modules:** `protocol`, `net`, minimal loopback test helpers.  
-> **Work:** exact 20-byte codec, all v1 typed JSON messages and validation, incremental frame parser, bounded input/output queues, non-blocking listener/connect/accept/read/write, ConnectionManager.  
+> **Future modules:** `protocol`, `net`, minimal loopback test helpers.
+> **Work:** exact 20-byte codec, all v1 typed JSON messages and validation, incremental frame parser, bounded input/output queues, non-blocking listener/connect/accept/read/write, ConnectionManager.
 > **Acceptance:** golden header/message vectors; every split point; multiple frames/read; partial send/EAGAIN; max-size/malformed/role-invalid rejection; callback lifetime and peer-close tests.
 
 Permitted production areas (names may vary while preserving module ownership):

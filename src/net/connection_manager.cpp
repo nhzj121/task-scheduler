@@ -191,6 +191,7 @@ struct ConnectionManager::Impl {
             if (sent > std::min(bytes.size(),budget)) throw std::runtime_error("send hook count exceeds buffer");
             explicit_failure(connection.output.advance(sent)); budget -= sent;
         }
+        connection.output.retry_boundary();
         explicit_failure(update(connection));
     }
     void dispatch(TcpConnection& connection, io::EventMask events) {

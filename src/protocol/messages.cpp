@@ -211,7 +211,10 @@ template <typename T> Json write(const T& value) {
     else if constexpr (Vector<T>::value) { auto array = Json::array(); for (const auto& item : value) array.push_back(write(item)); return array; }
     else if constexpr (std::is_same_v<T, Environment>) return Json(value);
     else if constexpr (Uuid<T>::value || std::is_same_v<T, domain::WorkerId> || std::is_same_v<T, domain::AttemptNumber>) return value.value();
-    else if constexpr (std::is_same_v<T, common::Timestamp>) return value.to_string();
+    else if constexpr (std::is_same_v<T, common::Timestamp>) {
+        try { return value.to_string(); }
+        catch (const std::out_of_range&) { throw Invalid("timestamp outside four-digit UTC year range"); }
+    }
     else if constexpr (std::is_same_v<T, domain::TaskState> || std::is_same_v<T, domain::AttemptState> || std::is_same_v<T, domain::WorkerState>) return std::string(domain::to_string(value));
     else if constexpr (std::is_enum_v<T>) {
         const auto index = static_cast<std::size_t>(value); const auto& list = tokens<T>();

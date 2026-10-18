@@ -30,9 +30,12 @@ class OutputQueue final {
 public:
     explicit OutputQueue(OutputLimits limits = {});
     [[nodiscard]] common::Result<void> enqueue(Outbound frame);
-    // Borrow valid only until enqueue/advance/clear. A selected partial frame stays pinned.
+    // Borrow valid only until enqueue/advance/retry_boundary/clear. A partial frame stays pinned.
     [[nodiscard]] std::string_view front();
     [[nodiscard]] common::Result<void> advance(std::size_t bytes);
+    // An EAGAIN/budget yield before the first byte is still a frame boundary. Reconsider
+    // control priority next time; never unpin a frame with any bytes already transmitted.
+    void retry_boundary();
     [[nodiscard]] std::size_t bytes(QueueClass queue) const noexcept;
     [[nodiscard]] std::size_t unsent_bytes(QueueClass queue) const noexcept;
     [[nodiscard]] std::size_t slots(QueueClass queue) const noexcept;

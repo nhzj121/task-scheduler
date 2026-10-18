@@ -116,7 +116,7 @@ TEST(Messages, ApprovedPaginationDefaultsCapsInvalidAndOverflow) {
     ASSERT_TRUE(decode(Type::ListTasks, list)); EXPECT_EQ(std::get<ListTasks>(decode(Type::ListTasks, list).value()).page_size,100U);
     auto logs = fixture(Type::GetLogs); logs.erase("limit_bytes");
     EXPECT_EQ(std::get<GetLogs>(decode(Type::GetLogs,logs).value()).limit_bytes,262144U);
-    for (std::uint64_t value : {1ULL,200ULL,201ULL,0xffffffffffffffffULL}) {
+    for (std::uint64_t value : std::array<std::uint64_t,7>{1,200,201,kMaxLogPage - 1,kMaxLogPage,kMaxLogPage + 1,std::numeric_limits<std::uint64_t>::max()}) {
         list["page_size"] = value; auto result = decode(Type::ListTasks,list); ASSERT_TRUE(result);
         EXPECT_EQ(std::get<ListTasks>(result.value()).page_size,std::min(value,std::uint64_t{200}));
         logs["limit_bytes"] = value; auto log_result = decode(Type::GetLogs,logs); ASSERT_TRUE(log_result);
@@ -165,6 +165,9 @@ TEST(Messages, DomainNumericNestedAndEnumValidation) {
     for (auto state : {"PENDING","ACTIVE","SUCCEEDED","FAILED","CANCELLED"}) { task = fixture(Type::GetTaskResponse); task["task"]["state"] = state; EXPECT_TRUE(decode(Type::GetTaskResponse,task)); }
     for (auto state : {"ASSIGNED","STARTING","RUNNING","SUCCEEDED","FAILED","TIMED_OUT","CANCELLED","LOST"}) { task = fixture(Type::GetTaskResponse); task["attempts"][0]["state"] = state; EXPECT_TRUE(decode(Type::GetTaskResponse,task)); }
     task["attempts"][0]["state"] = "FINISHED"; EXPECT_FALSE(decode(Type::GetTaskResponse,task));
+    auto response = std::get<GetTaskResponse>(decode(Type::GetTaskResponse,fixture(Type::GetTaskResponse)).value());
+    response.task.created_at = common::Timestamp::from_unix_microseconds(std::numeric_limits<std::int64_t>::max());
+    EXPECT_FALSE(encode_message(Message{std::move(response)},7,Direction::ControllerToClient));
     auto error = fixture(Type::ErrorResponse);
     for (auto code : {"INVALID_ARGUMENT","NOT_FOUND","CONFLICT","UNSUPPORTED","TEMPORARILY_UNAVAILABLE","INTERNAL"}) { error["code"] = code; EXPECT_TRUE(decode(Type::ErrorResponse,error)); }
     error["code"] = "UNKNOWN"; EXPECT_FALSE(decode(Type::ErrorResponse,error));

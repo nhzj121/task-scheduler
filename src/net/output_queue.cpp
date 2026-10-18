@@ -72,6 +72,11 @@ common::Result<void> OutputQueue::advance(std::size_t count) {
     }
     return common::Result<void>::success();
 }
+void OutputQueue::retry_boundary() {
+    if (!current_ || current_->offset != 0) return;
+    auto& queue = current_->frame.queue == QueueClass::Control ? control_ : logs_;
+    queue.push_front(std::move(current_->frame)); current_.reset();
+}
 std::size_t OutputQueue::bytes(QueueClass queue) const noexcept { return queue == QueueClass::Control ? control_bytes_ : log_bytes_; }
 std::size_t OutputQueue::unsent_bytes(QueueClass queue) const noexcept {
     return bytes(queue) - ((current_ && current_->frame.queue == queue) ? current_->offset : 0U);
