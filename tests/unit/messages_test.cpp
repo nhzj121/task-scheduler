@@ -2,6 +2,7 @@
 #include "../helpers/protocol_fixtures.h"
 #include <gtest/gtest.h>
 #include <limits>
+#include <random>
 #include <set>
 
 namespace ts::protocol {
@@ -222,6 +223,20 @@ TEST(Messages, DeepDiagnosticDetailsAreBoundedWithoutRecursiveCopyOrDump) {
     ASSERT_TRUE(decoded); const auto encoded = encode_message(decoded.value(),7,Direction::ControllerToClient); ASSERT_TRUE(encoded);
     EXPECT_EQ(encoded.value().payload.size(),payload.size());
     EXPECT_TRUE(decode_message(encoded.value(),Direction::ControllerToClient));
+}
+TEST(Messages, FixedSeedJsonMutationNeverEscapesValidationBoundary) {
+    std::mt19937 random(19843);
+    for (const auto& item : test::fixtures) {
+        for (int i = 0; i < 64; ++i) {
+            auto payload = std::string(item.json);
+            payload[static_cast<std::size_t>(random() % payload.size())] = static_cast<char>(random() & 255U);
+            const auto result = decode_message(frame(item.type,payload),direction(item.type));
+            if (result) {
+                auto encoded = encode_message(result.value(),is_event(item.type) ? 0U : 99U,direction(item.type));
+                ASSERT_TRUE(encoded); EXPECT_LE(encoded.value().payload.size(),kMaxPayload);
+            } else EXPECT_LE(result.error().message.size(),256U);
+        }
+    }
 }
 } // namespace
 } // namespace ts::protocol
