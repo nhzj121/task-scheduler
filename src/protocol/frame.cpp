@@ -17,13 +17,13 @@ std::uint64_t get(const std::uint8_t* in, std::size_t width) {
     return value;
 }
 ProtocolResult<Header> validate(Header header, Direction expected) {
+    if (header.payload_length == 0 || header.payload_length > kMaxPayload)
+        return ProtocolResult<Header>::failure(ErrorKind::Framing, "invalid payload length");
     if (!known_type(header.type)) return ProtocolResult<Header>::failure(ErrorKind::Unsupported, "reserved message type");
     if (direction(header.type) != expected) return ProtocolResult<Header>::failure(ErrorKind::Unsupported, "wrong message direction");
     if ((is_event(header.type) && header.request_id != 0) ||
         (!is_event(header.type) && header.type != Type::ErrorResponse && header.request_id == 0))
         return ProtocolResult<Header>::failure(ErrorKind::Schema, "invalid request_id");
-    if (header.payload_length == 0 || header.payload_length > kMaxPayload)
-        return ProtocolResult<Header>::failure(ErrorKind::Framing, "invalid payload length");
     return ProtocolResult<Header>::success(header);
 }
 } // namespace
