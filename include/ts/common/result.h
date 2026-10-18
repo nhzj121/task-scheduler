@@ -5,7 +5,7 @@
 #include <utility>
 #include <variant>
 
-namespace ts::common {
+namespace ts::common { 
 
 struct Error {
     std::string message;

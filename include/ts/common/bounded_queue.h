@@ -64,7 +64,7 @@ public:
         queue_.pop_front();
         return value;
     }
-
+ 
     void stop() noexcept {
         {
             std::lock_guard<std::mutex> lock(mutex_);
