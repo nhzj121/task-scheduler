@@ -29,7 +29,8 @@ common::Result<void> reject_unknown(const Json& object,
         const std::string_view key(iterator.key());
         if (std::find(allowed.begin(), allowed.end(), key) == allowed.end()) {
             return common::Result<void>::failure(std::string(path) +
-                                                 " contains unknown field '" + iterator.key() +
+                                                 " contains unknown field '" + 
+                                                 iterator.key() +
                                                  "'");
         }
     }

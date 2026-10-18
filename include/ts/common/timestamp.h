@@ -6,7 +6,7 @@
 
 #include "ts/common/result.h"
 
-namespace ts::common {
+namespace ts::common { 
 
 class Timestamp {
 public:

@@ -47,7 +47,7 @@ public:
         if (!notification) {
             return common::Result<common::QueuePushResult>::failure(
                 notification.error().message);
-        }
+        } 
         return common::Result<common::QueuePushResult>::success(push_result);
     }
 
