@@ -75,6 +75,8 @@ public:
     [[nodiscard]] common::Result<RuntimeProcessId> launch(
         const LaunchOptions& options);
     [[nodiscard]] common::Result<bool> cancel(RuntimeProcessId process_id);
+    // Errors do not release owned children. Continue polling to finish explicit cleanup
+    // before destruction; failed fd registrations are serviced nonblockingly here.
     [[nodiscard]] common::Result<std::size_t> poll_once(int timeout_ms);
     [[nodiscard]] common::Result<void> set_output_enabled(
         RuntimeProcessId process_id, OutputStream stream, bool enabled);
@@ -85,6 +87,9 @@ public:
     [[nodiscard]] std::size_t registration_count() const noexcept;
 
 private:
+    friend class ProcessRuntimeTestPeer;
+    void fail_next_registrations_for_testing(std::uint32_t mask);
+    int output_fd_for_testing(RuntimeProcessId id, OutputStream stream);
     class Impl;
     explicit ProcessRuntime(std::unique_ptr<Impl> implementation) noexcept;
 

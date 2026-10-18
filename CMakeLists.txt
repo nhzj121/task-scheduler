@@ -163,7 +163,20 @@ if(BUILD_TESTING)
   ts_enable_project_warnings(ts_milestone4_tests)
   gtest_discover_tests(
     ts_milestone4_tests
-    PROPERTIES LABELS runtime
+    PROPERTIES LABELS runtime TIMEOUT 15
     DISCOVERY_TIMEOUT 30
   )
+
+  add_executable(ts_runtime_closed_stdio_fixture
+    tests/helpers/runtime_closed_stdio_fixture.cpp
+  )
+  target_link_libraries(ts_runtime_closed_stdio_fixture PRIVATE ts_runtime)
+  target_compile_definitions(ts_runtime_closed_stdio_fixture
+    PRIVATE TS_RUNTIME_HELPER_PATH="$<TARGET_FILE:ts_runtime_test_helper>"
+  )
+  add_dependencies(ts_runtime_closed_stdio_fixture ts_runtime_test_helper)
+  ts_enable_project_warnings(ts_runtime_closed_stdio_fixture)
+  add_test(NAME ProcessRuntime.ClosedStandardFds
+           COMMAND ts_runtime_closed_stdio_fixture)
+  set_tests_properties(ProcessRuntime.ClosedStandardFds PROPERTIES LABELS runtime TIMEOUT 20)
 endif()

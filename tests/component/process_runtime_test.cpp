@@ -15,6 +15,7 @@
 #include <vector>
 
 #include <csignal>
+#include <poll.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -22,6 +23,17 @@
 #include <gtest/gtest.h>
 
 namespace ts::runtime {
+
+class ProcessRuntimeTestPeer {
+public:
+    static void fail_next_registrations(ProcessRuntime& runtime, std::uint32_t mask) {
+        runtime.fail_next_registrations_for_testing(mask);
+    }
+    static int output_fd(ProcessRuntime& runtime, RuntimeProcessId id, OutputStream stream) {
+        return runtime.output_fd_for_testing(id, stream);
+    }
+};
+
 namespace {
 
 using namespace std::chrono_literals;
@@ -61,7 +73,12 @@ public:
                 auto& destination = stream == OutputStream::STDOUT
                                         ? output_[id].stdout_bytes
                                         : output_[id].stderr_bytes;
-                destination.insert(destination.end(), bytes, bytes + size);
+                if (capture_output) {
+                    destination.insert(destination.end(), bytes, bytes + size);
+                }
+                if (sink_hook) {
+                    sink_hook(id, stream, size);
+                }
                 return common::Result<void>::success();
             });
         if (!created) {
@@ -163,6 +180,13 @@ public:
 
     const std::string& failure() const noexcept {
         return failure_;
+    }
+
+    std::function<void(RuntimeProcessId, OutputStream, std::size_t)> sink_hook;
+    bool capture_output{true};
+
+    bool completed(RuntimeProcessId id) const {
+        return completion_by_id_.count(id) != 0U;
     }
 
 private:
@@ -413,6 +437,168 @@ TEST(ProcessRuntime, RepeatedRapidConcurrentExitLeavesNoFdsRegistrationsOrZombie
     }
     EXPECT_EQ(count_open_fds(), baseline_fds);
 }
+
+TEST(ProcessRuntime, SinkCanPauseWithBufferedDataAndResumeWithoutByteLoss) {
+    RuntimeHarness harness;
+    bool paused = false;
+    std::size_t stdout_deliveries = 0U;
+    harness.sink_hook = [&](RuntimeProcessId id, OutputStream stream, std::size_t) {
+        if (stream != OutputStream::STDOUT) {
+            return;
+        }
+        ++stdout_deliveries;
+        if (!paused) {
+            // The helper is blocked writing stdout until we drain it. Wait until another
+            // chunk is ready, so a second read in this same callback would be observable.
+            pollfd source{ProcessRuntimeTestPeer::output_fd(harness.runtime(), id, stream),
+                          POLLIN, 0};
+            ASSERT_EQ(::poll(&source, 1U, 1000), 1);
+            ASSERT_NE(source.revents & POLLIN, 0);
+            ASSERT_TRUE(harness.runtime().set_output_enabled(id, stream, false));
+            paused = true;
+        }
+    };
+    const RuntimeProcessId id = harness.launch({"large", "524288"});
+    ASSERT_TRUE(harness.poll_until([&] { return paused; })) << harness.failure();
+    EXPECT_EQ(stdout_deliveries, 1U);
+    const std::size_t paused_size = harness.output(id).stdout_bytes.size();
+    for (int iteration = 0; iteration < 12; ++iteration) {
+        ASSERT_TRUE(harness.runtime().poll_once(0));
+        harness.collect();
+        EXPECT_EQ(harness.output(id).stdout_bytes.size(), paused_size);
+        EXPECT_EQ(stdout_deliveries, 1U);
+    }
+    ASSERT_TRUE(harness.runtime().set_output_enabled(id, OutputStream::STDOUT, true));
+    ASSERT_TRUE(harness.wait_completed(id)) << harness.failure();
+    std::vector<std::uint8_t> expected(524288U);
+    for (std::size_t index = 0U; index < expected.size(); ++index) {
+        expected[index] = static_cast<std::uint8_t>((index % 4096U) % 251U);
+    }
+    EXPECT_EQ(harness.output(id).stdout_bytes, expected);
+    EXPECT_EQ(harness.output(id).stderr_bytes, expected);
+}
+
+TEST(ProcessRuntime, ContinuousOutputHasBoundedDispatchAndDoesNotStarveTimerOrReap) {
+    RuntimeHarness harness;
+    harness.capture_output = false;
+    std::size_t bytes_this_poll = 0U;
+    std::size_t total_bytes = 0U;
+    harness.sink_hook = [&](RuntimeProcessId, OutputStream, std::size_t size) {
+        bytes_this_poll += size;
+        total_bytes += size;
+    };
+    const RuntimeProcessId flood = harness.launch({"continuous"}, 100ms, 20ms);
+    const RuntimeProcessId quick = harness.launch({"exit", "0"});
+    const auto deadline = std::chrono::steady_clock::now() + 3s;
+    while (harness.runtime().running_count() != 0U &&
+           std::chrono::steady_clock::now() < deadline) {
+        bytes_this_poll = 0U;
+        ASSERT_TRUE(harness.runtime().poll_once(50));
+        harness.collect();
+        EXPECT_LE(bytes_this_poll, 64U * 1024U);
+    }
+    ASSERT_TRUE(harness.completed(quick));
+    ASSERT_TRUE(harness.completed(flood));
+    EXPECT_GT(total_bytes, 0U);
+    EXPECT_EQ(harness.completion(quick).leader_outcome->exit_code, 0);
+    EXPECT_EQ(harness.completion(flood).termination_cause, TerminationCause::TIMEOUT);
+    EXPECT_EQ(harness.runtime().registration_count(), 1U);
+}
+
+class RegistrationFailureTest : public ::testing::TestWithParam<std::uint32_t> {};
+
+TEST_P(RegistrationFailureTest, RetainsAndCleansAllPostForkResources) {
+    const std::size_t baseline = count_open_fds();
+    {
+        RuntimeHarness harness;
+        // Inherit SIGTERM-ignore through exec, forcing the recovery path to service
+        // its grace timer and SIGKILL even if the helper has not reached main yet.
+        struct sigaction ignored {};
+        struct sigaction previous {};
+        ignored.sa_handler = SIG_IGN;
+        ASSERT_EQ(::sigemptyset(&ignored.sa_mask), 0);
+        ASSERT_EQ(::sigaction(SIGTERM, &ignored, &previous), 0);
+        ProcessRuntimeTestPeer::fail_next_registrations(harness.runtime(), GetParam());
+        const RuntimeProcessId id = harness.launch({"ignore-term"}, std::nullopt, 20ms);
+        ASSERT_EQ(::sigaction(SIGTERM, &previous, nullptr), 0);
+
+        bool explicit_failure = false;
+        const auto deadline = std::chrono::steady_clock::now() + 3s;
+        while (!harness.completed(id) && std::chrono::steady_clock::now() < deadline) {
+            const auto polled = harness.runtime().poll_once(-1);
+            if (!polled) {
+                EXPECT_NE(polled.error().message.find("registration failed"),
+                          std::string::npos);
+                explicit_failure = true;
+            }
+            harness.collect();
+        }
+        ASSERT_TRUE(harness.completed(id));
+        EXPECT_TRUE(explicit_failure);
+        const auto& result = harness.completion(id);
+        EXPECT_TRUE(result.exec_succeeded);
+        EXPECT_EQ(result.termination_cause, TerminationCause::INTERNAL_ERROR);
+        EXPECT_EQ(result.leader_outcome->term_signal, SIGKILL);
+        EXPECT_TRUE(result.stdout_complete);
+        EXPECT_TRUE(result.stderr_complete);
+        EXPECT_EQ(::kill(-result.pgid, 0), -1);
+        EXPECT_EQ(errno, ESRCH);
+        int status = 0;
+        EXPECT_EQ(::waitpid(result.leader_pid, &status, WNOHANG), -1);
+        EXPECT_EQ(errno, ECHILD);
+        EXPECT_EQ(harness.runtime().running_count(), 0U);
+        EXPECT_EQ(harness.runtime().registration_count(), 1U);
+    }
+    EXPECT_EQ(count_open_fds(), baseline);
+}
+
+TEST_P(RegistrationFailureTest, HandlesRapidExitAndExecFailureDuringRecovery) {
+    const std::size_t baseline = count_open_fds();
+    {
+        RuntimeHarness harness;
+        for (const bool missing_executable : {false, true}) {
+            ProcessRuntimeTestPeer::fail_next_registrations(harness.runtime(), GetParam());
+            const RuntimeProcessId id = harness.launch(
+                {"exit", "0"}, std::nullopt, 20ms,
+                missing_executable ? "/definitely/missing/registration-failure-helper"
+                                   : TS_RUNTIME_HELPER_PATH);
+            bool reported = false;
+            const auto deadline = std::chrono::steady_clock::now() + 3s;
+            while (!harness.completed(id) && std::chrono::steady_clock::now() < deadline) {
+                const auto polled = harness.runtime().poll_once(20);
+                if (!polled) {
+                    EXPECT_NE(polled.error().message.find("registration failed"),
+                              std::string::npos);
+                    reported = true;
+                }
+                harness.collect();
+            }
+            ASSERT_TRUE(harness.completed(id));
+            EXPECT_TRUE(reported);
+            const auto& completion = harness.completion(id);
+            EXPECT_EQ(completion.termination_cause, TerminationCause::INTERNAL_ERROR);
+            if (missing_executable) {
+                EXPECT_FALSE(completion.exec_succeeded);
+                ASSERT_TRUE(completion.launch_failure.has_value());
+                EXPECT_EQ(completion.launch_failure->stage, ChildFailureStage::EXECVE);
+                EXPECT_EQ(completion.launch_failure->error_number, ENOENT);
+            } else {
+                EXPECT_TRUE(completion.exec_succeeded);
+            }
+            EXPECT_EQ(::kill(-completion.pgid, 0), -1);
+            EXPECT_EQ(errno, ESRCH);
+            EXPECT_EQ(harness.runtime().registration_count(), 1U);
+            int status = 0;
+            EXPECT_EQ(::waitpid(-1, &status, WNOHANG), -1);
+            EXPECT_EQ(errno, ECHILD);
+        }
+    }
+    EXPECT_EQ(count_open_fds(), baseline);
+}
+
+INSTANTIATE_TEST_SUITE_P(PostFork, RegistrationFailureTest,
+                        ::testing::Values(1U << 2U, 1U << 3U, 1U << 4U,
+                                          1U << 5U, 0x3cU));
 
 }  // namespace
 }  // namespace ts::runtime

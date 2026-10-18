@@ -85,6 +85,27 @@ int main(int argc, char** argv) {
         return 100;
     }
     const std::string mode(argv[1]);
+    if (mode == "continuous") {
+        static_cast<void>(::signal(SIGTERM, SIG_IGN));
+        std::vector<unsigned char> block(4096U, 0x5aU);
+        for (;;) {
+            write_all(STDOUT_FILENO, block.data(), block.size());
+        }
+    }
+    if (mode == "stdio-check") {
+        char byte = '\0';
+        if (::read(STDIN_FILENO, &byte, 1U) != 0) {
+            return 118;
+        }
+        char cwd[4096];
+        if (::getcwd(cwd, sizeof(cwd)) == nullptr) {
+            return 119;
+        }
+        write_text(STDOUT_FILENO, "stdin-eof;cwd=" + std::string(cwd) + "\n");
+        const unsigned char bytes[]{'e', 0U, 0xfeU};
+        write_all(STDERR_FILENO, bytes, sizeof(bytes));
+        return 0;
+    }
     if (mode == "exit" && argc == 3) {
         const int code = parse_int(argv[2]);
         return code >= 0 && code <= 255 ? code : 101;

@@ -28,6 +28,7 @@ namespace {
 constexpr std::uint32_t kChildFailureMagic = 0x54534346U;
 constexpr std::uint16_t kChildFailureVersion = 1U;
 constexpr std::size_t kReadBufferSize = 16U * 1024U;
+constexpr std::size_t kOutputReadAttemptsPerDispatch = 4U;
 constexpr std::chrono::nanoseconds kGroupProbeInterval =
     std::chrono::milliseconds(10);
 
@@ -66,13 +67,34 @@ std::string errno_message(const char* operation, int error_number) {
            std::error_code(error_number, std::generic_category()).message();
 }
 
+common::Result<common::UniqueFd> duplicate_above_stdio(int fd) {
+    int duplicate = -1;
+    do {
+        duplicate = ::fcntl(fd, F_DUPFD_CLOEXEC, STDERR_FILENO + 1);
+    } while (duplicate == -1 && errno == EINTR);
+    if (duplicate == -1) {
+        return common::Result<common::UniqueFd>::failure(
+            errno_message("fcntl(F_DUPFD_CLOEXEC)", errno));
+    }
+    return common::Result<common::UniqueFd>::success(common::UniqueFd(duplicate));
+}
+
 common::Result<PipePair> create_pipe() {
     std::array<int, 2> fds{-1, -1};
     if (::pipe2(fds.data(), O_CLOEXEC) == -1) {
         return common::Result<PipePair>::failure(errno_message("pipe2", errno));
     }
-    return common::Result<PipePair>::success(
-        PipePair{common::UniqueFd(fds[0]), common::UniqueFd(fds[1])});
+    PipePair pipe{common::UniqueFd(fds[0]), common::UniqueFd(fds[1])};
+    for (common::UniqueFd* end : {&pipe.read_end, &pipe.write_end}) {
+        if (end->get() <= STDERR_FILENO) {
+            auto elevated = duplicate_above_stdio(end->get());
+            if (!elevated) {
+                return common::Result<PipePair>::failure(elevated.error().message);
+            }
+            *end = std::move(elevated).value();
+        }
+    }
+    return common::Result<PipePair>::success(std::move(pipe));
 }
 
 common::Result<void> make_nonblocking(int fd) {
@@ -233,6 +255,7 @@ public:
         bool stdout_enabled{true};
         bool stderr_enabled{true};
         bool completion_scheduled{false};
+        bool registration_recovery{false};
     };
 
     Impl(std::unique_ptr<io::EventLoop> event_loop, io::SignalFd signal_fd,
@@ -288,6 +311,17 @@ public:
             return common::Result<RuntimeProcessId>::failure(prepared.error().message);
         }
 
+        // Even when stdio was closed at startup, every child setup source must be above
+        // 0/1/2 before fork. dup2 destinations can then never alias a later setup source.
+        auto child_cwd = duplicate_above_stdio(prepared.value().cwd_fd());
+        if (!child_cwd) {
+            return common::Result<RuntimeProcessId>::failure(child_cwd.error().message);
+        }
+        auto child_stdin = duplicate_above_stdio(prepared.value().stdin_fd());
+        if (!child_stdin) {
+            return common::Result<RuntimeProcessId>::failure(child_stdin.error().message);
+        }
+
         auto stdout_pipe = create_pipe();
         if (!stdout_pipe) {
             return common::Result<RuntimeProcessId>::failure(stdout_pipe.error().message);
@@ -330,8 +364,8 @@ public:
         child_data.stderr_write_fd = stderr_pipe.value().write_end.get();
         child_data.status_read_fd = status_pipe.value().read_end.get();
         child_data.status_write_fd = status_pipe.value().write_end.get();
-        child_data.cwd_fd = prepared.value().cwd_fd();
-        child_data.stdin_fd = prepared.value().stdin_fd();
+        child_data.cwd_fd = child_cwd.value().get();
+        child_data.stdin_fd = child_stdin.value().get();
         child_data.executable_path = prepared.value().executable_path().c_str();
         child_data.argv = prepared.value().argv();
         child_data.envp = prepared.value().envp();
@@ -375,58 +409,55 @@ public:
         processes_.emplace(id, std::move(running));
         pid_to_process_.emplace(pid, id);
 
-        auto stdout_registration = event_loop_->add(
+        auto stdout_registration = register_process_fd(
             running_pointer->stdout_fd.get(), io::kReadable | io::kReadHangup,
             [this, id](const io::RegistrationToken&, io::EventMask) {
                 drain_output(id, OutputStream::STDOUT);
             },
             io::RegistrationMetadata{2U, id});
-        auto stderr_registration = event_loop_->add(
+        auto stderr_registration = register_process_fd(
             running_pointer->stderr_fd.get(), io::kReadable | io::kReadHangup,
             [this, id](const io::RegistrationToken&, io::EventMask) {
                 drain_output(id, OutputStream::STDERR);
             },
             io::RegistrationMetadata{3U, id});
-        auto status_registration = event_loop_->add(
+        auto status_registration = register_process_fd(
             running_pointer->status_fd.get(), io::kReadable | io::kReadHangup,
             [this, id](const io::RegistrationToken&, io::EventMask) {
                 drain_exec_status(id);
             },
             io::RegistrationMetadata{4U, id});
-        auto timer_registration = event_loop_->add(
+        auto timer_registration = register_process_fd(
             running_pointer->timer.fd(), io::kReadable,
             [this, id](const io::RegistrationToken&, io::EventMask) {
                 handle_timer(id);
             },
             io::RegistrationMetadata{5U, id});
 
-        if (!stdout_registration || !stderr_registration || !status_registration ||
-            !timer_registration) {
-            record_error("failed to register a process fd with EventLoop");
-            begin_termination(*running_pointer, TerminationCause::INTERNAL_ERROR);
-        }
         if (stdout_registration) {
             running_pointer->stdout_registration = stdout_registration.value();
-        } else {
-            running_pointer->stdout_eof = true;
-            running_pointer->stdout_fd.reset();
         }
         if (stderr_registration) {
             running_pointer->stderr_registration = stderr_registration.value();
-        } else {
-            running_pointer->stderr_eof = true;
-            running_pointer->stderr_fd.reset();
         }
         if (status_registration) {
             running_pointer->status_registration = status_registration.value();
-        } else {
-            running_pointer->exec_resolved = true;
-            running_pointer->launch_failure =
-                LaunchFailure{ChildFailureStage::MALFORMED_STATUS, EIO};
-            running_pointer->status_fd.reset();
         }
         if (timer_registration) {
             running_pointer->timer_registration = timer_registration.value();
+        }
+        if (!stdout_registration || !stderr_registration || !status_registration ||
+            !timer_registration) {
+            const std::string error = !stdout_registration
+                ? stdout_registration.error().message
+                : !stderr_registration ? stderr_registration.error().message
+                : !status_registration ? status_registration.error().message
+                                       : timer_registration.error().message;
+            record_error("process fd registration failed: " + error);
+            // Keep every fd and lifecycle fact. Missing registrations are serviced with
+            // bounded nonblocking polls until exec, termination, reap and EOF settle.
+            running_pointer->registration_recovery = true;
+            begin_termination(*running_pointer, TerminationCause::INTERNAL_ERROR);
         }
         return common::Result<RuntimeProcessId>::success(id);
     }
@@ -448,6 +479,12 @@ public:
     }
 
     common::Result<std::size_t> poll_once(int timeout_ms) {
+        if (timeout_ms < -1) {
+            return common::Result<std::size_t>::failure("invalid runtime poll timeout");
+        }
+        if (service_registration_recovery() && (timeout_ms < 0 || timeout_ms > 10)) {
+            timeout_ms = 10;
+        }
         const auto polled = event_loop_->poll_once(timeout_ms);
         if (!polled) {
             return polled;
@@ -506,7 +543,65 @@ public:
         return event_loop_->registration_count();
     }
 
+    void fail_next_registrations_for_testing(std::uint32_t mask) {
+        registration_failure_mask_ = mask;
+    }
+
+    int output_fd_for_testing(RuntimeProcessId id, OutputStream stream) {
+        RunningProcess* process = find(id);
+        if (process == nullptr) {
+            return -1;
+        }
+        return stream == OutputStream::STDOUT ? process->stdout_fd.get()
+                                               : process->stderr_fd.get();
+    }
+
 private:
+    common::Result<io::RegistrationToken> register_process_fd(
+        int fd, io::EventMask interest, io::EventLoop::Callback callback,
+        io::RegistrationMetadata metadata) {
+        const std::uint32_t bit = std::uint32_t{1U} << metadata.handler_kind;
+        if ((registration_failure_mask_ & bit) != 0U) {
+            registration_failure_mask_ &= ~bit;
+            return common::Result<io::RegistrationToken>::failure(
+                "injected registration failure for kind " +
+                std::to_string(metadata.handler_kind));
+        }
+        return event_loop_->add(fd, interest, std::move(callback), metadata);
+    }
+
+    bool service_registration_recovery() {
+        std::vector<RuntimeProcessId> recovering;
+        for (const auto& entry : processes_) {
+            if (entry.second->registration_recovery && !entry.second->completion_scheduled) {
+                recovering.push_back(entry.first);
+            }
+        }
+        // Sinks may launch another process. Snapshot IDs before calling them so map
+        // insertion/rehashing cannot invalidate this recovery pass.
+        for (const RuntimeProcessId id : recovering) {
+            RunningProcess* current = find(id);
+            if (current == nullptr || current->completion_scheduled) {
+                continue;
+            }
+            RunningProcess& process = *current;
+            if (!process.status_registration.has_value() && process.status_fd) {
+                drain_exec_status(process.id);
+            }
+            if (!process.stdout_registration.has_value() && process.stdout_fd) {
+                drain_output(process.id, OutputStream::STDOUT);
+            }
+            if (!process.stderr_registration.has_value() && process.stderr_fd) {
+                drain_output(process.id, OutputStream::STDERR);
+            }
+            if (!process.timer_registration.has_value()) {
+                handle_timer(process.id);
+            }
+            maybe_complete(process);
+        }
+        return !recovering.empty();
+    }
+
     void record_error(std::string message) {
         if (!fatal_error_.has_value()) {
             fatal_error_ = std::move(message);
@@ -568,7 +663,13 @@ private:
         common::UniqueFd& fd =
             stream == OutputStream::STDOUT ? process->stdout_fd : process->stderr_fd;
         std::array<std::uint8_t, kReadBufferSize> buffer{};
-        for (;;) {
+        // LT readiness remains pending when the budget is exhausted. Recheck interest
+        // after each sink call, including when a stale HUP event dispatches while paused.
+        for (std::size_t attempt = 0U; attempt < kOutputReadAttemptsPerDispatch; ++attempt) {
+            if (!(stream == OutputStream::STDOUT ? process->stdout_enabled
+                                                 : process->stderr_enabled)) {
+                return;
+            }
             const ssize_t count = ::read(fd.get(), buffer.data(), buffer.size());
             if (count > 0) {
                 const auto delivered = output_sink_(
@@ -653,9 +754,13 @@ private:
             process.exec_succeeded = true;
             process.handle.confirm_group_established();
             started_.push_back(process.id);
+            if (process.handle.reaped()) {
+                resolve_group_after_reap(process);
+            }
             if (process.handle.termination_cause() != TerminationCause::NONE) {
                 send_term(process);
-            } else if (process.timeout.has_value()) {
+            } else if (process.timeout.has_value() && !process.handle.reaped() &&
+                       process.handle.cleanup_phase() == GroupCleanupPhase::NONE) {
                 arm_timer(process, *process.timeout, TimerPurpose::TIMEOUT);
             }
             return;
@@ -751,6 +856,10 @@ private:
             disarm_timer(process);
             return;
         }
+        if (process.handle.cleanup_phase() == GroupCleanupPhase::ABSENT) {
+            // Exec-status may confirm group establishment after the leader was reaped.
+            process.handle.set_cleanup_phase(GroupCleanupPhase::NONE);
+        }
         if (process.handle.cleanup_phase() == GroupCleanupPhase::NONE) {
             send_term(process);
         }
@@ -812,6 +921,9 @@ private:
         const auto drained = process->timer.drain();
         if (!drained) {
             record_error(drained.error().message);
+            return;
+        }
+        if (drained.value() == 0U) {
             return;
         }
         const TimerPurpose purpose = process->timer_purpose;
@@ -933,6 +1045,7 @@ private:
     std::vector<RuntimeProcessId> started_;
     std::vector<ProcessCompletion> completions_;
     std::optional<std::string> fatal_error_;
+    std::uint32_t registration_failure_mask_{0U};
 };
 
 common::Result<std::unique_ptr<ProcessRuntime>> ProcessRuntime::create(
@@ -996,6 +1109,14 @@ ProcessRuntime::ProcessRuntime(std::unique_ptr<Impl> implementation) noexcept
     : implementation_(std::move(implementation)) {}
 
 ProcessRuntime::~ProcessRuntime() = default;
+
+void ProcessRuntime::fail_next_registrations_for_testing(std::uint32_t mask) {
+    implementation_->fail_next_registrations_for_testing(mask);
+}
+
+int ProcessRuntime::output_fd_for_testing(RuntimeProcessId id, OutputStream stream) {
+    return implementation_->output_fd_for_testing(id, stream);
+}
 
 common::Result<RuntimeProcessId> ProcessRuntime::launch(const LaunchOptions& options) {
     return implementation_->launch(options);
