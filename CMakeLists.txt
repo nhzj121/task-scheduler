@@ -71,9 +71,19 @@ target_compile_features(ts_runtime PUBLIC cxx_std_17)
 target_link_libraries(ts_runtime PUBLIC ts_common ts_io)
 ts_enable_project_warnings(ts_runtime)
 
+add_library(ts_protocol STATIC src/protocol/frame.cpp)
+target_include_directories(ts_protocol PUBLIC include)
+target_link_libraries(ts_protocol PUBLIC ts_common ts_domain nlohmann_json::nlohmann_json)
+ts_enable_project_warnings(ts_protocol)
+
 if(BUILD_TESTING)
   find_package(GTest 1.11 REQUIRED)
   include(GoogleTest)
+
+  add_executable(ts_milestone3_tests tests/unit/frame_test.cpp)
+  target_link_libraries(ts_milestone3_tests PRIVATE ts_protocol GTest::gtest_main)
+  ts_enable_project_warnings(ts_milestone3_tests)
+  gtest_discover_tests(ts_milestone3_tests PROPERTIES LABELS m3 TIMEOUT 20)
 
   add_executable(ts_milestone1_tests
     tests/unit/bounded_queue_test.cpp

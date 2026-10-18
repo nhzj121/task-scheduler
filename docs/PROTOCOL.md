@@ -206,6 +206,9 @@ Page size defaults to 100 and is capped at 200. The opaque token encodes the las
 `(created_at, task_id)` cursor. Results are ordered newest first. Pagination is stable with
 respect to the cursor but is not a multi-page database snapshot.
 
+An omitted `page_size` uses 100. A positive integer above 200 is clamped to 200;
+zero, negative values, wrong JSON types, and integers outside uint64 are `INVALID_ARGUMENT`.
+
 `CLIENT.LIST_TASKS_RESPONSE` (`0x0106`):
 
 ```json
@@ -238,6 +241,14 @@ respect to the cursor but is not a multi-page database snapshot.
 `limit_bytes` defaults to 256 KiB and is capped so the base64 response remains under 4 MiB. On
 the first request, null `snapshot_end` captures the currently completed LogWriter byte count.
 Later pages repeat that returned value.
+
+An omitted `limit_bytes` uses 262144. A positive uint64 integer is capped to
+3,144,960 raw bytes: `3 * floor((4,194,304 - 1,024) / 4)`. This reserves 1,024 bytes
+for the complete fixed-field JSON response envelope (canonical UUID, uint32 Attempt number,
+uint64 offsets, stream, booleans and punctuation), with base64 expansion at most
+4,193,280 bytes. The encoder also checks the complete payload against 4 MiB.
+Zero, negative values, incorrect JSON types, and uint64 overflow are `INVALID_ARGUMENT`;
+there is no silent numeric truncation.
 
 `CLIENT.GET_LOGS_RESPONSE` (`0x0108`):
 
@@ -337,6 +348,12 @@ Only `FAILED` is retryable in v1.
 
 This is current in-memory Controller state, not persistent Worker history.
 
+Every Worker object retains all documented fields. An `OFFLINE` Worker has
+`session_id: null` (no valid current session). `last_heartbeat_at` retains the last
+observed valid heartbeat or is null if none exists. `max_concurrent_tasks` may be null.
+Reservations and running-attempt counts reflect authoritative current in-memory state,
+not an invalidated session; this does not introduce persisted Worker state.
+
 ### Error response
 
 `ERROR_RESPONSE` (`0x0001`):
@@ -388,8 +405,10 @@ then closes the old connection.
 }
 ```
 
-For rejection, `accepted` is false and fields `error_code` and `message` replace runtime
-settings. The Controller instance ID is diagnostic only; it is not a reconciliation epoch.
+For rejection, the object contains exactly `accepted: false`, required `error_code`, and
+required `message`. All success-only fields, including `controller_instance_id`, are absent.
+For acceptance, all seven fields in the success example are required and rejection-only
+fields are absent. The Controller instance ID is diagnostic only; it is not a reconciliation epoch.
 
 ### Heartbeat
 
