@@ -84,9 +84,39 @@ target_include_directories(ts_net PUBLIC include)
 target_link_libraries(ts_net PUBLIC ts_common ts_io)
 ts_enable_project_warnings(ts_net)
 
+add_library(ts_storage STATIC
+  src/storage/types.cpp
+  src/storage/state_store.cpp
+  src/storage/persistence_thread.cpp
+)
+target_include_directories(ts_storage PUBLIC include)
+target_link_libraries(ts_storage PUBLIC ts_common ts_domain SQLite::SQLite3 nlohmann_json::nlohmann_json Threads::Threads)
+ts_enable_project_warnings(ts_storage)
+
+# Integration composition is separate: ts_storage never depends on ts_io.
+add_library(ts_persistence STATIC src/persistence/channel.cpp)
+target_include_directories(ts_persistence PUBLIC include)
+target_link_libraries(ts_persistence PUBLIC ts_storage ts_io)
+ts_enable_project_warnings(ts_persistence)
+
 if(BUILD_TESTING)
   find_package(GTest 1.11 REQUIRED)
   include(GoogleTest)
+
+  add_executable(ts_storage_lock_helper tests/helpers/storage_lock_helper.cpp)
+  target_link_libraries(ts_storage_lock_helper PRIVATE ts_persistence)
+  ts_enable_project_warnings(ts_storage_lock_helper)
+  add_executable(ts_milestone5_tests
+    tests/component/storage_schema_test.cpp
+    tests/component/storage_transaction_test.cpp
+    tests/component/storage_failure_test.cpp
+    tests/component/persistence_channel_test.cpp
+  )
+  target_link_libraries(ts_milestone5_tests PRIVATE ts_persistence GTest::gtest_main)
+  target_compile_definitions(ts_milestone5_tests PRIVATE TS_STORAGE_LOCK_HELPER_PATH="$<TARGET_FILE:ts_storage_lock_helper>")
+  add_dependencies(ts_milestone5_tests ts_storage_lock_helper)
+  ts_enable_project_warnings(ts_milestone5_tests)
+  gtest_discover_tests(ts_milestone5_tests NO_PRETTY_VALUES PROPERTIES LABELS m5 TIMEOUT 20 DISCOVERY_TIMEOUT 30)
 
   add_executable(ts_milestone3_tests
     tests/unit/frame_test.cpp
