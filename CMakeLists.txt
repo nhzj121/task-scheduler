@@ -71,9 +71,34 @@ target_compile_features(ts_runtime PUBLIC cxx_std_17)
 target_link_libraries(ts_runtime PUBLIC ts_common ts_io)
 ts_enable_project_warnings(ts_runtime)
 
+add_library(ts_protocol STATIC src/protocol/frame.cpp src/protocol/messages.cpp)
+target_include_directories(ts_protocol PUBLIC include)
+target_link_libraries(ts_protocol PUBLIC ts_common ts_domain nlohmann_json::nlohmann_json)
+ts_enable_project_warnings(ts_protocol)
+
+add_library(ts_net STATIC
+  src/net/output_queue.cpp
+  src/net/connection_manager.cpp
+)
+target_include_directories(ts_net PUBLIC include)
+target_link_libraries(ts_net PUBLIC ts_common ts_io)
+ts_enable_project_warnings(ts_net)
+
 if(BUILD_TESTING)
   find_package(GTest 1.11 REQUIRED)
   include(GoogleTest)
+
+  add_executable(ts_milestone3_tests
+    tests/unit/frame_test.cpp
+    tests/unit/messages_test.cpp
+    tests/unit/output_queue_test.cpp
+    tests/component/tcp_test.cpp
+    tests/component/connection_manager_cleanup_test.cpp
+  )
+  target_link_libraries(ts_milestone3_tests
+    PRIVATE ts_protocol ts_net GTest::gtest_main Threads::Threads)
+  ts_enable_project_warnings(ts_milestone3_tests)
+  gtest_discover_tests(ts_milestone3_tests NO_PRETTY_VALUES PROPERTIES LABELS m3 TIMEOUT 20)
 
   add_executable(ts_milestone1_tests
     tests/unit/bounded_queue_test.cpp

@@ -1,5 +1,14 @@
 # Architecture Decisions
 
+## M3 protocol clarification approval (2026-10-18)
+
+User-approved narrow clarifications in `PROTOCOL.md`: REGISTER_ACK has disjoint exact
+accepted/rejected shapes; OFFLINE Worker objects retain their complete shape with no current
+session and nullable last heartbeat; positive pagination limits are capped, not rejected.
+The raw GET_LOGS cap is 3,144,960 bytes, reserving 1,024 payload bytes for its bounded JSON
+envelope after base64 expansion. Invalid numeric types, zero, negatives and uint64 overflow
+remain INVALID_ARGUMENT. No IDs, framing, state, ownership or persistence rules changed.
+
 This file records the decisions that freeze v1 semantics. The specification files under
 `docs/spec/` remain authoritative. Status `Accepted` means accepted for the architecture
 baseline; production implementation still requires explicit human approval.
