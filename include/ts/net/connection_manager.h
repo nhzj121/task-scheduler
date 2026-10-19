@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <sys/types.h>
+#include <sys/socket.h>
 
 #include "ts/common/unique_fd.h"
 #include "ts/io/event_loop.h"
@@ -41,6 +42,7 @@ struct Callbacks {
 struct SocketIo {
     std::function<ssize_t(int, const void*, std::size_t, int)> send;
     std::function<ssize_t(int, void*, std::size_t, int)> recv;
+    std::function<int(int, const sockaddr*, socklen_t)> connect;
 };
 struct ConnectionSnapshot {
     int fd; bool connecting, closing; io::EventMask interest;
@@ -58,6 +60,8 @@ public:
     [[nodiscard]] common::Result<ListenerId> listen(const Endpoint& endpoint, int backlog = 128);
     [[nodiscard]] common::Result<Endpoint> endpoint(ListenerId id) const;
     [[nodiscard]] common::Result<void> close_listener(ListenerId id);
+    // Connected-callback copy/invocation failures close with CallbackError. Synchronous
+    // completion returns a failed Result; deferred completion fails EventLoop::poll_once.
     [[nodiscard]] common::Result<ConnectionId> connect(const Endpoint& endpoint);
     // Takes exclusive ownership of an already connected TCP fd (also normalizes its flags).
     [[nodiscard]] common::Result<ConnectionId> adopt(common::UniqueFd socket);

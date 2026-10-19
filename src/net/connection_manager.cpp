@@ -76,6 +76,7 @@ struct ConnectionManager::Impl {
         : loop(event_loop), callbacks(std::move(handlers)), limits(bounds), operations(std::move(syscalls)) {
         if (!operations.send) operations.send = ::send;
         if (!operations.recv) operations.recv = ::recv;
+        if (!operations.connect) operations.connect = ::connect;
     }
     ~Impl() {
         if (owner != std::this_thread::get_id()) std::terminate();
@@ -84,6 +85,7 @@ struct ConnectionManager::Impl {
         for (auto& entry : connections) if (entry.second->token && !loop.remove(*entry.second->token)) std::terminate();
     }
     bool on_owner() const { return owner == std::this_thread::get_id(); }
+    bool at_capacity() const { return connections.size() >= limits.maximum_connections; }
     std::uint64_t allocate_id() {
         if (next_id == std::numeric_limits<std::uint64_t>::max()) throw std::overflow_error("transport identity exhausted");
         return next_id++;
@@ -122,14 +124,19 @@ struct ConnectionManager::Impl {
         if (callback_failure) return common::Result<void>::failure("close callback threw (transport cleanup completed)");
         return common::Result<void>::success();
     }
-    void notify_connected(TcpConnection& connection) {
+    common::Result<void> notify_connected(TcpConnection& connection) {
         try { if (callbacks.connected) { auto callback = callbacks.connected; callback(connection.id); } }
-        catch (...) { explicit_failure(close(connection.id,CloseCause::CallbackError)); throw; }
+        catch (...) {
+            auto cleaned = close(connection.id,CloseCause::CallbackError);
+            if (!cleaned) return common::Result<void>::failure("connected callback threw; cleanup failed: " + cleaned.error().message);
+            return common::Result<void>::failure("connected callback threw (transport cleanup completed)");
+        }
+        return common::Result<void>::success();
     }
     common::Result<ConnectionId> adopt(common::UniqueFd socket, bool connecting) {
         if (!on_owner()) return common::Result<ConnectionId>::failure("not transport owner thread");
         // Include closing owners until the safe point: churn cannot build an unbounded retired list.
-        if (connections.size() >= limits.maximum_connections) return common::Result<ConnectionId>::failure("connection bound reached");
+        if (at_capacity()) return common::Result<ConnectionId>::failure("connection bound reached");
         auto flags = normalize(socket.get());
         if (!flags) return common::Result<ConnectionId>::failure(flags.error().message);
         const ConnectionId id{allocate_id()};
@@ -146,7 +153,10 @@ struct ConnectionManager::Impl {
             }, {3U,id.value});
         if (!token) { connections.erase(id.value); return common::Result<ConnectionId>::failure(token.error().message); }
         connection->token = token.value();
-        if (!connecting) notify_connected(*connection);
+        if (!connecting) {
+            auto notified = notify_connected(*connection);
+            if (!notified) return common::Result<ConnectionId>::failure(notified.error().message);
+        }
         return common::Result<ConnectionId>::success(id);
     }
     void receive(TcpConnection& connection) {
@@ -199,7 +209,7 @@ struct ConnectionManager::Impl {
             int error = 0; socklen_t length = sizeof(error); int status;
             do { status = ::getsockopt(connection.socket.get(),SOL_SOCKET,SO_ERROR,&error,&length); } while (status < 0 && errno == EINTR);
             if (status < 0 || error != 0) { explicit_failure(close(connection.id,CloseCause::ConnectError,status < 0 ? errno : error)); return; }
-            connection.connecting = false; notify_connected(connection);
+            connection.connecting = false; explicit_failure(notify_connected(connection));
             if (connection.closing) return;
         }
         if ((events & (io::kReadable | io::kReadHangup | EPOLLHUP)) != 0 && connection.read_enabled) receive(connection);
@@ -225,7 +235,12 @@ struct ConnectionManager::Impl {
                 if (errno == EAGAIN || errno == EWOULDBLOCK) return;
                 throw std::runtime_error(diagnostic("accept4"));
             }
-            auto accepted = adopt(common::UniqueFd(fd),false);
+            common::UniqueFd socket(fd);
+            // Expected admission pressure, not a callback/internal failure. The local owner
+            // closes the excess socket; this attempt still consumes the bounded accept budget.
+            // No callbacks occur between this owner-thread capacity check and adopt().
+            if (at_capacity()) continue;
+            auto accepted = adopt(std::move(socket),false);
             if (!accepted) throw std::runtime_error(accepted.error().message);
         }
     }
@@ -290,7 +305,7 @@ common::Result<ConnectionId> ConnectionManager::connect(const Endpoint& target) 
     const auto& addr = parsed.value();
     common::UniqueFd socket(::socket(addr.family,SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC,0));
     if (!socket) return common::Result<ConnectionId>::failure(diagnostic("socket"));
-    const auto status = ::connect(socket.get(),reinterpret_cast<const sockaddr*>(&addr.storage),addr.size);
+    const auto status = impl_->operations.connect(socket.get(),reinterpret_cast<const sockaddr*>(&addr.storage),addr.size);
     if (status < 0 && errno != EINPROGRESS && errno != EINTR) return common::Result<ConnectionId>::failure(diagnostic("connect"));
     return impl_->adopt(std::move(socket),status < 0);
 }

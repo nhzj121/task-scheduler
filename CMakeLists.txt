@@ -93,6 +93,7 @@ if(BUILD_TESTING)
     tests/unit/messages_test.cpp
     tests/unit/output_queue_test.cpp
     tests/component/tcp_test.cpp
+    tests/component/connection_manager_cleanup_test.cpp
   )
   target_link_libraries(ts_milestone3_tests
     PRIVATE ts_protocol ts_net GTest::gtest_main Threads::Threads)
