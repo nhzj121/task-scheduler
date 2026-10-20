@@ -1,5 +1,7 @@
 #include "../helpers/storage_fixture.h"
 
+#include <tuple>
+
 namespace ts::storage::test {
 using TS = domain::TaskState;
 using AS = domain::AttemptState;
@@ -184,4 +186,89 @@ TEST_F(StoreTest, VersionAndFinalCounterOverflowNeverWrapIntoSuccessfulUpdates) 
     EXPECT_EQ(row.stdout_bytes, static_cast<std::uint64_t>(INT64_MAX));
     EXPECT_EQ(row.stderr_final_sequence, std::optional<std::uint64_t>(INT64_MAX));
 }
+
+enum class TerminalLogCase { FinalBarrier, ProvenEmptyRejection, ProvenEmptyCancellation, Lost, LogFailure };
+class TerminalLogPaths : public StoreTest,
+    public ::testing::WithParamInterface<std::tuple<TerminalLogCase, int>> {};
+
+TEST_P(TerminalLogPaths, AssignedPathsArePreservedAcrossTerminalization) {
+    const auto kind = std::get<0>(GetParam());
+    const auto mismatch = std::get<1>(GetParam());
+    const bool proven_empty = kind == TerminalLogCase::ProvenEmptyRejection ||
+                              kind == TerminalLogCase::ProvenEmptyCancellation;
+    submit(1);
+    auto assigned_command = assignment(1);
+    assigned_command.stdout_path = "logs/task-1/attempt-1/stdout.log";
+    assigned_command.stderr_path = "logs/task-1/attempt-1/stderr.log";
+    ASSERT_TRUE(run(assigned_command).committed);
+    if (!proven_empty) {
+        ASSERT_TRUE(run(Advance{av(1, 0), AS::STARTING, kAt}).committed);
+        ASSERT_TRUE(run(Advance{av(1, 1), AS::RUNNING, kAt}).committed);
+    }
+    auto command = finish(1);
+    command.stdout_path = assigned_command.stdout_path;
+    command.stderr_path = assigned_command.stderr_path;
+    if (proven_empty) {
+        command.expected.version = 0;
+        command.exit_code.reset();
+        command.logs = {};
+        command.logs.kind = LogEvidenceKind::ProvenEmpty;
+        if (kind == TerminalLogCase::ProvenEmptyRejection) {
+            command.to = AS::FAILED;
+            command.reason = "DISPATCH_REJECTED";
+            command.logs.explicit_dispatch_rejection = true;
+        } else {
+            command.to = AS::CANCELLED;
+            command.logs.no_dispatch_bytes = true;
+        }
+    } else {
+        command.stdout_bytes = 5; command.stderr_bytes = 7;
+        command.stdout_final_sequence = 1; command.stderr_final_sequence = 1;
+        if (kind == TerminalLogCase::Lost) {
+            command.to = AS::LOST; command.exit_code.reset();
+            command.reason = "SESSION_LOST"; command.logs = {};
+        } else if (kind == TerminalLogCase::LogFailure) {
+            command.to = AS::FAILED; command.reason = "LOG_PERSISTENCE_ERROR";
+            command.observed_outcome_json = "{\"exit_code\":0}"; command.logs = {};
+        }
+    }
+    Reader reader(directory.path);
+    const auto tasks_before = reader.rows("SELECT * FROM tasks");
+    const auto attempts_before = reader.rows("SELECT * FROM attempts");
+    if (mismatch != 0) {
+        auto inconsistent = command;
+        if ((mismatch & 1) != 0) inconsistent.stdout_path = "logs/different/stdout.log";
+        if ((mismatch & 2) != 0) inconsistent.stderr_path = "logs/different/stderr.log";
+        const auto rejected = run(inconsistent);
+        EXPECT_FALSE(rejected.committed);
+        ASSERT_TRUE(rejected.error);
+        EXPECT_EQ(rejected.error->code, ErrorCode::Invalid);
+        EXPECT_FALSE(rejected.error->fatal);
+        // Full-row comparison covers state/version, both paths, final counters,
+        // logs_complete, timestamps and observed outcome via a second connection.
+        EXPECT_EQ(reader.rows("SELECT * FROM tasks"), tasks_before);
+        EXPECT_EQ(reader.rows("SELECT * FROM attempts"), attempts_before);
+        reader.exec("BEGIN IMMEDIATE"); reader.exec("ROLLBACK");
+        EXPECT_EQ(channel->status().health, Health::Ready);
+    }
+    // A rejected path change must not consume the expected versions or prevent
+    // the original, otherwise-identical terminal request from committing.
+    const auto completed = run(command);
+    ASSERT_TRUE(completed.ok()); ASSERT_TRUE(completed.committed);
+    EXPECT_EQ(reader.scalar("SELECT stdout_path FROM attempts"), assigned_command.stdout_path);
+    EXPECT_EQ(reader.scalar("SELECT stderr_path FROM attempts"), assigned_command.stderr_path);
+    EXPECT_EQ(reader.scalar("SELECT state FROM attempts"), domain::to_string(command.to));
+    EXPECT_EQ(reader.scalar("SELECT state FROM tasks"),
+              command.to == AS::SUCCEEDED ? "SUCCEEDED" : command.to == AS::CANCELLED ? "CANCELLED" : "FAILED");
+    EXPECT_EQ(reader.scalar("SELECT state_version FROM tasks"), "2");
+    EXPECT_EQ(reader.scalar("SELECT state_version FROM attempts"), proven_empty ? "1" : "3");
+    EXPECT_EQ(reader.scalar("SELECT stdout_bytes FROM attempts"), std::to_string(command.stdout_bytes));
+    EXPECT_EQ(reader.scalar("SELECT stderr_bytes FROM attempts"), std::to_string(command.stderr_bytes));
+    EXPECT_EQ(reader.scalar("SELECT logs_complete FROM attempts"),
+              kind == TerminalLogCase::Lost || kind == TerminalLogCase::LogFailure ? "0" : "1");
+}
+INSTANTIATE_TEST_SUITE_P(AllTerminalLogEvidence, TerminalLogPaths,
+    ::testing::Combine(::testing::Values(TerminalLogCase::FinalBarrier, TerminalLogCase::ProvenEmptyRejection,
+        TerminalLogCase::ProvenEmptyCancellation, TerminalLogCase::Lost, TerminalLogCase::LogFailure),
+        ::testing::Range(0, 4)));
 } // namespace ts::storage::test

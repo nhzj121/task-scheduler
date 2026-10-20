@@ -475,6 +475,9 @@ Outcome StateStore::perform(const Terminalize& c) {
     need(!(c.exit_code && c.term_signal), "mutually exclusive leader outcomes");
     if (c.to == AS::SUCCEEDED) need(c.exit_code == std::optional<std::int32_t>(0), "SUCCEEDED requires leader exit code zero");
     text(c.stdout_path); text(c.stderr_path); integer(c.stdout_bytes); integer(c.stderr_bytes);
+    // All terminal paths retain the log namespace established by assignment.
+    need(c.stdout_path == a.stdout_path && c.stderr_path == a.stderr_path,
+         "terminal log paths differ from assigned Attempt paths");
     if (c.stdout_final_sequence) integer(*c.stdout_final_sequence);
     if (c.stderr_final_sequence) integer(*c.stderr_final_sequence);
     if (c.reason) text(*c.reason);
