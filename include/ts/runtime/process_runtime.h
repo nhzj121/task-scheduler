@@ -61,10 +61,20 @@ struct ProcessCompletion {
 
 using OutputSink = std::function<common::Result<void>(
     RuntimeProcessId, OutputStream, const std::uint8_t*, std::size_t)>;
+// Parent/owner-thread policy, queried before EACH read, never in the child.
+// Zero pauses that stream; the owner explicitly re-enables it when capacity is
+// available. Default behavior retains the accepted M4 read/dispatch budgets.
+using OutputReadLimit = std::function<std::size_t(RuntimeProcessId, OutputStream)>;
+struct ProcessObservation {
+    pid_t leader_pid;
+    bool exec_resolved, exec_succeeded, stdout_complete, stderr_complete;
+    std::optional<LaunchFailure> launch_failure;
+};
 
 class ProcessRuntime final {
 public:
-    static common::Result<std::unique_ptr<ProcessRuntime>> create(OutputSink output_sink);
+    static common::Result<std::unique_ptr<ProcessRuntime>> create(
+        OutputSink output_sink, OutputReadLimit read_limit = {});
 
     ~ProcessRuntime();
     ProcessRuntime(const ProcessRuntime&) = delete;
@@ -85,6 +95,9 @@ public:
     [[nodiscard]] std::vector<ProcessCompletion> take_completions();
     [[nodiscard]] std::size_t running_count() const noexcept;
     [[nodiscard]] std::size_t registration_count() const noexcept;
+    // Non-owning value snapshot, valid even before exec; callers must check
+    // exec_succeeded before using its PID to announce TASK_STARTED.
+    [[nodiscard]] std::optional<ProcessObservation> observe(RuntimeProcessId id) const;
 
 private:
     friend class ProcessRuntimeTestPeer;

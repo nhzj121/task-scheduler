@@ -10,6 +10,7 @@ WorkerRegistry::WorkerRegistry(std::uint64_t timeout, std::size_t maximum_worker
 SessionKey WorkerRegistry::activate(const Registration& registration, WorkerRecord& record, std::uint64_t now) {
     SessionKey key{registration.worker_id, registration.session_id, next_generation_++, registration.connection};
     record.current = WorkerSession{key, registration.capacity, registration.maximum, now + timeout_, 0};
+    record.capacity = registration.capacity; record.maximum = registration.maximum;
     record.state = domain::WorkerState::HEALTHY; record.invalidating = false; record.socket_closed = false;
     return key;
 }
@@ -97,5 +98,16 @@ std::vector<SessionKey> WorkerRegistry::invalidating() const {
     if (owner_ != std::this_thread::get_id()) return result;
     for (const auto& item : workers_) if (item.second.current && item.second.invalidating) result.push_back(item.second.current->key);
     return result;
+}
+std::vector<std::pair<domain::WorkerId, WorkerRecord>> WorkerRegistry::records() const {
+    if (owner_ != std::this_thread::get_id()) return {};
+    return {workers_.begin(), workers_.end()};
+}
+bool WorkerRegistry::discard_replacement(ConnectionIdentity connection) {
+    if (owner_ != std::this_thread::get_id()) return false;
+    for (auto& item : workers_) if (item.second.replacement && item.second.replacement->connection == connection) {
+        item.second.replacement.reset(); return true;
+    }
+    return false;
 }
 } // namespace ts::controller

@@ -1,0 +1,96 @@
+#include "ts/client/client.h"
+
+#include <algorithm>
+
+namespace ts::client {
+struct Client::Impl {
+    std::unique_ptr<io::EventLoop> loop;
+    std::unique_ptr<net::ConnectionManager> transport;
+    protocol::FrameParser parser{protocol::Direction::ControllerToClient};
+    std::optional<net::ConnectionId> connection;
+    std::optional<protocol::Message> reply;
+    std::optional<std::string> error;
+    std::chrono::milliseconds timeout;
+    std::uint64_t next_id{1}, pending_id{0};
+    protocol::Type expected{protocol::Type::ErrorResponse};
+    bool connected{false};
+    explicit Impl(std::unique_ptr<io::EventLoop> event_loop, std::chrono::milliseconds deadline)
+        : loop(std::move(event_loop)), timeout(deadline) {}
+    ~Impl() { transport.reset(); }
+    bool wait(const std::function<bool()>& ready) {
+        const auto end = std::chrono::steady_clock::now() + timeout;
+        while (!ready() && !error && std::chrono::steady_clock::now() < end) {
+            const auto polled = loop->poll_once(50);
+            if (!polled) error = polled.error().message;
+        }
+        if (!ready() && !error) error = "TCP request deadline expired; a submitted Task may already have committed";
+        return ready() && !error;
+    }
+    std::size_t bytes(net::ConnectionId id, std::string_view data) {
+        auto fed = parser.feed(data, [&](protocol::Frame&& frame) {
+            if (!pending_id || reply || frame.header.request_id != pending_id ||
+                (frame.header.type != expected && frame.header.type != protocol::Type::ErrorResponse)) {
+                error = "response type/request ID does not match outstanding request"; return false;
+            }
+            auto decoded = protocol::decode_message(frame, protocol::Direction::ControllerToClient);
+            if (!decoded) { error = decoded.error().message; return false; }
+            reply = std::move(decoded).value(); return true;
+        });
+        if (!fed) {
+            if (!error) error = fed.error().message;
+            const auto closed = transport->close(id);
+            if (!closed) error = closed.error().message;
+        }
+        return data.size();
+    }
+};
+Client::Client(std::unique_ptr<Impl> impl) : impl_(std::move(impl)) {}
+Client::~Client() = default;
+common::Result<std::unique_ptr<Client>> Client::connect(net::Endpoint endpoint, std::chrono::milliseconds timeout) {
+    using R = common::Result<std::unique_ptr<Client>>;
+    if (timeout.count() <= 0) return R::failure("client timeout must be positive");
+    auto loop = io::EventLoop::create(); if (!loop) return R::failure(loop.error().message);
+    auto impl = std::make_unique<Impl>(std::move(loop).value(), timeout); auto* owner = impl.get();
+    auto transport = net::ConnectionManager::create(*impl->loop, {
+        [owner](auto id) { owner->connection = id; owner->connected = true; },
+        [owner](auto id, auto bytes) { return owner->bytes(id, bytes); },
+        [owner](auto) { if (!owner->reply && !owner->error) owner->error = "TCP connection closed; submission outcome may be unknown"; }
+    });
+    if (!transport) return R::failure(transport.error().message);
+    impl->transport = std::move(transport).value();
+    const auto connected = impl->transport->connect(endpoint);
+    if (!connected) return R::failure(connected.error().message);
+    if (!impl->wait([&] { return impl->connected; })) return R::failure(*impl->error);
+    return R::success(std::unique_ptr<Client>(new Client(std::move(impl))));
+}
+common::Result<protocol::Message> Client::request(protocol::Message message) {
+    using R = common::Result<protocol::Message>;
+    auto& s = *impl_;
+    if (s.error) return R::failure(*s.error);
+    if (s.pending_id || s.next_id == UINT64_MAX) return R::failure("client request identity unavailable");
+    const auto id = s.next_id++;
+    auto frame = protocol::encode_message(message, id, protocol::Direction::ClientToController);
+    if (!frame) return R::failure(frame.error().message);
+    auto encoded = protocol::encode_frame(frame.value(), protocol::Direction::ClientToController);
+    if (!encoded) return R::failure(encoded.error().message);
+    s.pending_id = id; s.expected = protocol::response_type(frame.value().header.type); s.reply.reset();
+    const auto sent = s.transport->send(*s.connection, {std::move(encoded).value()});
+    if (!sent) { s.error = sent.error().message; return R::failure(*s.error); }
+    if (!s.wait([&] { return s.reply.has_value(); })) return R::failure(*s.error);
+    auto reply = std::move(*s.reply); s.reply.reset(); s.pending_id = 0;
+    return R::success(std::move(reply));
+}
+common::Result<std::size_t> Client::list(
+    const std::function<void(const protocol::ListTasksResponse&)>& consume, std::uint64_t size) {
+    using R = common::Result<std::size_t>; std::optional<std::string> token; std::size_t count = 0;
+    do {
+        auto response = request(protocol::ListTasks{size, token});
+        if (!response) return R::failure(response.error().message);
+        if (const auto* error = std::get_if<protocol::ErrorResponse>(&response.value())) return R::failure(error->message);
+        const auto& page = std::get<protocol::ListTasksResponse>(response.value());
+        if (page.next_page_token && page.next_page_token == token) return R::failure("server pagination cursor did not advance");
+        consume(page); count += page.tasks.size(); token = page.next_page_token;
+    } while (token);
+    return R::success(count);
+}
+} // namespace ts::client

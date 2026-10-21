@@ -1,5 +1,6 @@
 #include "ts/runtime/process_runtime.h"
 
+#include <algorithm>
 #include <array>
 #include <cerrno>
 #include <csignal>
@@ -260,13 +261,14 @@ public:
 
     Impl(std::unique_ptr<io::EventLoop> event_loop, io::SignalFd signal_fd,
          sigset_t previous_signal_mask, std::string startup_cwd,
-         std::vector<std::string> inherited_environment, OutputSink output_sink) noexcept
+         std::vector<std::string> inherited_environment, OutputSink output_sink,
+         OutputReadLimit read_limit) noexcept
         : event_loop_(std::move(event_loop)),
           signal_fd_(std::move(signal_fd)),
           previous_signal_mask_(previous_signal_mask),
           startup_cwd_(std::move(startup_cwd)),
           inherited_environment_(std::move(inherited_environment)),
-          output_sink_(std::move(output_sink)) {}
+          output_sink_(std::move(output_sink)), read_limit_(std::move(read_limit)) {}
 
     ~Impl() {
         if (!processes_.empty()) {
@@ -543,6 +545,14 @@ public:
         return event_loop_->registration_count();
     }
 
+    std::optional<ProcessObservation> observe(RuntimeProcessId id) const {
+        const auto it = processes_.find(id);
+        if (it == processes_.end()) return std::nullopt;
+        const auto& process = *it->second;
+        return ProcessObservation{process.handle.leader_pid(), process.exec_resolved,
+            process.exec_succeeded, process.stdout_eof, process.stderr_eof, process.launch_failure};
+    }
+
     void fail_next_registrations_for_testing(std::uint32_t mask) {
         registration_failure_mask_ = mask;
     }
@@ -670,7 +680,13 @@ private:
                                                  : process->stderr_enabled)) {
                 return;
             }
-            const ssize_t count = ::read(fd.get(), buffer.data(), buffer.size());
+            const auto limit = read_limit_ ? std::min(buffer.size(), read_limit_(id, stream)) : buffer.size();
+            if (limit == 0) {
+                const auto paused = set_output_enabled(id, stream, false);
+                if (!paused) record_error(paused.error().message);
+                return;
+            }
+            const ssize_t count = ::read(fd.get(), buffer.data(), limit);
             if (count > 0) {
                 const auto delivered = output_sink_(
                     id, stream, buffer.data(), static_cast<std::size_t>(count));
@@ -1039,6 +1055,7 @@ private:
     std::string startup_cwd_;
     std::vector<std::string> inherited_environment_;
     OutputSink output_sink_;
+    OutputReadLimit read_limit_;
     RuntimeProcessId next_process_id_{1U};
     std::unordered_map<RuntimeProcessId, std::unique_ptr<RunningProcess>> processes_;
     std::unordered_map<pid_t, RuntimeProcessId> pid_to_process_;
@@ -1049,7 +1066,7 @@ private:
 };
 
 common::Result<std::unique_ptr<ProcessRuntime>> ProcessRuntime::create(
-    OutputSink output_sink) {
+    OutputSink output_sink, OutputReadLimit read_limit) {
     if (!output_sink) {
         return common::Result<std::unique_ptr<ProcessRuntime>>::failure(
             "ProcessRuntime requires an output sink");
@@ -1095,7 +1112,7 @@ common::Result<std::unique_ptr<ProcessRuntime>> ProcessRuntime::create(
     auto implementation = std::make_unique<Impl>(
         std::move(event_loop).value(), std::move(signal_fd).value(), previous_mask,
         std::move(startup_cwd).value(), std::move(environment).value(),
-        std::move(output_sink));
+        std::move(output_sink), std::move(read_limit));
     const auto initialized = implementation->initialize();
     if (!initialized) {
         return common::Result<std::unique_ptr<ProcessRuntime>>::failure(
@@ -1150,6 +1167,10 @@ std::size_t ProcessRuntime::running_count() const noexcept {
 
 std::size_t ProcessRuntime::registration_count() const noexcept {
     return implementation_->registration_count();
+}
+
+std::optional<ProcessObservation> ProcessRuntime::observe(RuntimeProcessId id) const {
+    return implementation_->observe(id);
 }
 
 }  // namespace ts::runtime

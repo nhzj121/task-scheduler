@@ -109,9 +109,65 @@ target_include_directories(ts_controller_state PUBLIC include)
 target_link_libraries(ts_controller_state PUBLIC ts_scheduler ts_storage)
 ts_enable_project_warnings(ts_controller_state)
 
+add_library(ts_controller STATIC src/controller/provisional_staging.cpp src/controller/views.cpp src/controller/application.cpp)
+target_include_directories(ts_controller PUBLIC include)
+target_link_libraries(ts_controller PUBLIC ts_controller_state ts_persistence ts_net ts_protocol spdlog::spdlog)
+ts_enable_project_warnings(ts_controller)
+add_executable(controller src/apps/controller.cpp)
+target_link_libraries(controller PRIVATE ts_controller)
+ts_enable_project_warnings(controller)
+
+add_library(ts_client STATIC src/client/client.cpp)
+target_include_directories(ts_client PUBLIC include)
+target_link_libraries(ts_client PUBLIC ts_net ts_protocol)
+ts_enable_project_warnings(ts_client)
+add_executable(taskctl src/apps/taskctl.cpp)
+target_link_libraries(taskctl PRIVATE ts_client)
+ts_enable_project_warnings(taskctl)
+
+add_library(ts_worker STATIC src/worker/execution_manager.cpp src/worker/application.cpp)
+target_include_directories(ts_worker PUBLIC include)
+target_link_libraries(ts_worker PUBLIC ts_net ts_protocol ts_runtime spdlog::spdlog)
+ts_enable_project_warnings(ts_worker)
+add_executable(worker src/apps/worker.cpp)
+target_link_libraries(worker PRIVATE ts_worker)
+ts_enable_project_warnings(worker)
+
 if(BUILD_TESTING)
   find_package(GTest 1.11 REQUIRED)
   include(GoogleTest)
+
+  add_executable(ts_milestone7_tests tests/component/m7_runtime_support_test.cpp tests/unit/m7_staging_test.cpp)
+  target_link_libraries(ts_milestone7_tests PRIVATE ts_runtime ts_controller ts_client GTest::gtest_main)
+  ts_enable_project_warnings(ts_milestone7_tests)
+  gtest_discover_tests(ts_milestone7_tests NO_PRETTY_VALUES PROPERTIES LABELS "m7;component" TIMEOUT 20)
+
+  add_executable(ts_m7_fault_controller tests/helpers/m7_fault_controller.cpp)
+  target_link_libraries(ts_m7_fault_controller PRIVATE ts_controller)
+  ts_enable_project_warnings(ts_m7_fault_controller)
+  find_program(TS_PYTHON_EXECUTABLE NAMES python3 REQUIRED)
+  foreach(m7_case IN ITEMS
+      real_vertical_slice_two_workers_and_crash_recovery
+      help_invalid_configuration_lock_and_clean_cycles
+      fragmentation_roles_request_correlation_and_fd_churn
+      durable_submit_gate_and_disconnected_client
+      assignment_gate_reserves_before_run_and_reuses_capacity_after_loss
+      essential_failure_and_unknown_commit_fail_stop_without_false_effects
+      pagination_history_restore_and_truthful_unsupported
+      registration_replacement_heartbeat_and_staging_exhaustion
+      output_credit_backpressure_control_liveness_and_group_shutdown
+      worker_wire_exec_failure_credit_and_finish_barrier
+      negative_missing_ack_and_session_replacement
+      startup_read_failure_never_opens_ready_listeners
+      real_launch_failures_hold_starting_without_fabricated_running
+      connection_output_pressure_is_bounded_and_other_clients_survive
+      partial_run_transport_failure_keeps_uncertainty_and_commits_lost
+      retained_metadata_and_session_tombstones_have_lifetime_admission_bounds)
+    add_test(NAME M7Loopback.${m7_case}
+      COMMAND ${TS_PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/integration/m7_loopback.py
+      --bin $<TARGET_FILE_DIR:controller> --case test_${m7_case})
+    set_tests_properties(M7Loopback.${m7_case} PROPERTIES LABELS "m7;integration" TIMEOUT 45)
+  endforeach()
 
   add_executable(ts_milestone6_tests tests/unit/scheduler_test.cpp tests/unit/resource_ledger_test.cpp tests/unit/worker_registry_test.cpp tests/component/controller_state_test.cpp)
   target_link_libraries(ts_milestone6_tests PRIVATE ts_controller_state GTest::gtest_main)
