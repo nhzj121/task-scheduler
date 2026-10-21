@@ -278,11 +278,16 @@ StateStore::StateStore(const StoreOptions& options) : owner_(std::this_thread::g
             fail(errno == EWOULDBLOCK ? ErrorCode::LockUnavailable : ErrorCode::Io,
                  "exclusive controller data-directory lock unavailable", true);
         const auto path = (canonical / "metadata.sqlite3").string();
-        common::UniqueFd file(::open(path.c_str(), O_RDWR | O_CREAT | O_CLOEXEC | O_NOFOLLOW, 0600));
-        if (!file) fail(ErrorCode::Io, "cannot open metadata database file", true);
-        struct stat db_stat {};
-        if (::fstat(file.get(), &db_stat) != 0 || !S_ISREG(db_stat.st_mode))
-            fail(ErrorCode::Io, "metadata database is not regular", true);
+        {
+            common::UniqueFd file(::open(path.c_str(), O_RDWR | O_CREAT | O_CLOEXEC | O_NOFOLLOW, 0600));
+            if (!file) fail(ErrorCode::Io, "cannot open metadata database file", true);
+            struct stat db_stat {};
+            if (::fstat(file.get(), &db_stat) != 0 || !S_ISREG(db_stat.st_mode))
+                fail(ErrorCode::Io, "metadata database is not regular", true);
+            // Close the validation fd BEFORE SQLite acquires POSIX locks on
+            // this inode. Closing any other fd afterwards would release this
+            // process's fcntl locks behind SQLite's back (even on another thread).
+        }
         check(sqlite3_open_v2(path.c_str(), &db_, SQLITE_OPEN_READWRITE | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_NOFOLLOW, nullptr), "open");
         check(sqlite3_extended_result_codes(db_, 1), "extended result codes");
         // Bound individual SQLite allocations even if an externally damaged database
