@@ -1,5 +1,6 @@
 #include "ts/runtime/process_runtime.h"
 #include "ts/controller/worker_registry.h"
+#include "ts/controller/task_manager.h"
 
 #include <chrono>
 #include <gtest/gtest.h>
@@ -87,5 +88,39 @@ TEST(M7Registry, OfflineAdvertisementSurvivesWithoutAStoredOrCurrentLease) {
     EXPECT_EQ(records[0].first, first.worker_id); EXPECT_EQ(records[0].second.state, domain::WorkerState::OFFLINE);
     EXPECT_FALSE(records[0].second.current); ASSERT_TRUE(records[0].second.capacity);
     EXPECT_EQ(records[0].second.capacity->cpu_slots(), 8U); EXPECT_FALSE(records[0].second.maximum);
+}
+TEST(M7Registry, ClosedPendingReplacementCannotBecomeHealthyAfterOldLossCommits) {
+    struct Persistence final : controller::PersistencePort {
+        std::vector<storage::Envelope> queued;
+        storage::Admission try_post(storage::Envelope command) override {
+            queued.push_back(std::move(command)); return storage::Admission::Accepted;
+        }
+    } persistence;
+    struct Effects final : controller::EffectPort {
+        std::vector<controller::Effect> values;
+        controller::EffectAdmission emit(controller::Effect effect) override {
+            values.push_back(std::move(effect)); return controller::EffectAdmission::Accepted;
+        }
+    } effects;
+    controller::TaskManager manager(persistence, effects);
+    controller::Registration first{domain::WorkerId::parse("worker-a").value(), domain::SessionId::generate(),
+        {7, 1}, domain::ResourceCapacity::create(1, 100).value(), 1};
+    ASSERT_EQ(manager.register_worker(first), controller::Decision::Accepted);
+    auto replacement = first; replacement.session_id = domain::SessionId::generate(); replacement.connection.generation = 2;
+    ASSERT_EQ(manager.register_worker(replacement), controller::Decision::Accepted);
+    ASSERT_EQ(persistence.queued.size(), 1U);
+    EXPECT_EQ(manager.connection_closed({7, 3}), controller::Decision::Stale); // fd identity alone is insufficient
+    EXPECT_EQ(manager.connection_closed(replacement.connection), controller::Decision::Accepted);
+    storage::Outcome outcome; outcome.committed = true; outcome.affected = 0;
+    ASSERT_EQ(manager.complete({persistence.queued[0].correlation, outcome}), controller::Decision::Accepted);
+    const auto record = manager.workers().inspect(first.worker_id);
+    ASSERT_TRUE(record); EXPECT_FALSE(record->current); EXPECT_FALSE(record->replacement);
+    EXPECT_EQ(record->state, domain::WorkerState::OFFLINE);
+    EXPECT_EQ(manager.connection_closed(first.connection), controller::Decision::Stale);
+    std::size_t accepted = 0;
+    for (const auto& e : effects.values) if (e.kind == controller::EffectKind::RegistrationAccepted) ++accepted;
+    EXPECT_EQ(accepted, 1U);
+    // Discarding a disconnected replacement does not make its UUID reusable.
+    EXPECT_EQ(manager.register_worker(replacement), controller::Decision::Rejected);
 }
 } // namespace

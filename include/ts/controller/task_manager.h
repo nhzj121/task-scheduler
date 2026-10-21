@@ -87,6 +87,7 @@ public:
     [[nodiscard]] Decision register_worker(Registration registration);
     [[nodiscard]] Decision heartbeat(const SessionKey& session, std::uint64_t sequence);
     [[nodiscard]] Decision invalidate(const SessionKey& session, bool socket_closed = false);
+    [[nodiscard]] Decision connection_closed(ConnectionIdentity connection);
     [[nodiscard]] Decision tick(std::uint64_t monotonic_ms, common::Timestamp wall_time);
     [[nodiscard]] Decision record_dispatch(const Effect& run, DispatchFact fact);
     [[nodiscard]] bool effect_is_current(const Effect& effect) const;

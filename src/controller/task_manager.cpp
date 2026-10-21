@@ -617,6 +617,14 @@ Decision TaskManager::invalidate(const SessionKey& session, bool closed) {
     if (failure_) return Decision::Degraded;
     return invalidate_impl(session, closed);
 }
+Decision TaskManager::connection_closed(ConnectionIdentity connection) {
+    Call call(*this); if (!call.entered) return Decision::WrongOwner;
+    if (failure_) return Decision::Degraded;
+    if (workers_.discard_replacement(connection)) return Decision::Accepted;
+    for (const auto& item : workers_.records()) if (item.second.current && item.second.current->key.connection == connection)
+        return invalidate_impl(item.second.current->key, true);
+    return Decision::Stale;
+}
 void TaskManager::losses() {
     for (const auto& key : workers_.invalidating()) {
         if (failure_ || losses_.count(key.session_id)) continue;

@@ -54,6 +54,9 @@ public:
     [[nodiscard]] std::vector<SessionKey> expired(std::uint64_t now) const;
     [[nodiscard]] std::vector<SessionKey> invalidating() const;
     [[nodiscard]] std::vector<std::pair<domain::WorkerId, WorkerRecord>> records() const;
+    // Transport vanished before replacement acceptance. Keep its UUID tombstone
+    // and the old session's invalidation/LOST obligation; never activate it later.
+    [[nodiscard]] bool discard_replacement(ConnectionIdentity connection);
 private:
     [[nodiscard]] SessionKey activate(const Registration& registration, WorkerRecord& record, std::uint64_t now);
     std::thread::id owner_;

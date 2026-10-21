@@ -103,4 +103,11 @@ std::vector<std::pair<domain::WorkerId, WorkerRecord>> WorkerRegistry::records()
     if (owner_ != std::this_thread::get_id()) return {};
     return {workers_.begin(), workers_.end()};
 }
+bool WorkerRegistry::discard_replacement(ConnectionIdentity connection) {
+    if (owner_ != std::this_thread::get_id()) return false;
+    for (auto& item : workers_) if (item.second.replacement && item.second.replacement->connection == connection) {
+        item.second.replacement.reset(); return true;
+    }
+    return false;
+}
 } // namespace ts::controller
