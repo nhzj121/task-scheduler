@@ -99,9 +99,24 @@ target_include_directories(ts_persistence PUBLIC include)
 target_link_libraries(ts_persistence PUBLIC ts_storage ts_io)
 ts_enable_project_warnings(ts_persistence)
 
+add_library(ts_scheduler STATIC src/scheduler/scheduler.cpp)
+target_include_directories(ts_scheduler PUBLIC include)
+target_link_libraries(ts_scheduler PUBLIC ts_domain)
+ts_enable_project_warnings(ts_scheduler)
+
+add_library(ts_controller_state STATIC src/controller/resource_ledger.cpp src/controller/worker_registry.cpp src/controller/task_manager.cpp)
+target_include_directories(ts_controller_state PUBLIC include)
+target_link_libraries(ts_controller_state PUBLIC ts_scheduler ts_storage)
+ts_enable_project_warnings(ts_controller_state)
+
 if(BUILD_TESTING)
   find_package(GTest 1.11 REQUIRED)
   include(GoogleTest)
+
+  add_executable(ts_milestone6_tests tests/unit/scheduler_test.cpp tests/unit/resource_ledger_test.cpp tests/unit/worker_registry_test.cpp tests/component/controller_state_test.cpp)
+  target_link_libraries(ts_milestone6_tests PRIVATE ts_controller_state GTest::gtest_main)
+  ts_enable_project_warnings(ts_milestone6_tests)
+  gtest_discover_tests(ts_milestone6_tests NO_PRETTY_VALUES PROPERTIES LABELS m6 TIMEOUT 20)
 
   add_executable(ts_storage_lock_helper tests/helpers/storage_lock_helper.cpp)
   target_link_libraries(ts_storage_lock_helper PRIVATE ts_persistence)
