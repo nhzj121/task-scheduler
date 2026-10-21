@@ -25,6 +25,9 @@ struct WorkerRecord {
     std::optional<Registration> replacement;
     bool invalidating{false}, socket_closed{false};
     std::optional<common::Timestamp> last_heartbeat_at;
+    // Last accepted advertisement survives OFFLINE in memory, never as a lease.
+    std::optional<domain::ResourceCapacity> capacity;
+    std::optional<std::uint32_t> maximum;
 };
 struct RegistrationDecision {
     std::optional<SessionKey> accepted;
@@ -50,6 +53,7 @@ public:
     [[nodiscard]] std::optional<WorkerRecord> inspect(const domain::WorkerId& worker) const;
     [[nodiscard]] std::vector<SessionKey> expired(std::uint64_t now) const;
     [[nodiscard]] std::vector<SessionKey> invalidating() const;
+    [[nodiscard]] std::vector<std::pair<domain::WorkerId, WorkerRecord>> records() const;
 private:
     [[nodiscard]] SessionKey activate(const Registration& registration, WorkerRecord& record, std::uint64_t now);
     std::thread::id owner_;

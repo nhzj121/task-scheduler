@@ -113,6 +113,11 @@ if(BUILD_TESTING)
   find_package(GTest 1.11 REQUIRED)
   include(GoogleTest)
 
+  add_executable(ts_milestone7_tests tests/component/m7_runtime_support_test.cpp)
+  target_link_libraries(ts_milestone7_tests PRIVATE ts_runtime ts_controller_state GTest::gtest_main)
+  ts_enable_project_warnings(ts_milestone7_tests)
+  gtest_discover_tests(ts_milestone7_tests NO_PRETTY_VALUES PROPERTIES LABELS "m7;component" TIMEOUT 20)
+
   add_executable(ts_milestone6_tests tests/unit/scheduler_test.cpp tests/unit/resource_ledger_test.cpp tests/unit/worker_registry_test.cpp tests/component/controller_state_test.cpp)
   target_link_libraries(ts_milestone6_tests PRIVATE ts_controller_state GTest::gtest_main)
   ts_enable_project_warnings(ts_milestone6_tests)
