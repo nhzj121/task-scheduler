@@ -1,0 +1,7 @@
+{
+  "worker_id": "worker-b",
+  "controller": {"address": "127.0.0.1", "port": 7421},
+  "capacity": {"cpu_slots": 2, "memory_mb": 512},
+  "max_concurrent_tasks": 2,
+  "logging": {"level": "info", "destination": "stderr"}
+}

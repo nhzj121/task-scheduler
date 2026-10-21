@@ -1,0 +1,6 @@
+{
+  "client_listen": {"address": "127.0.0.1", "port": 7420},
+  "worker_listen": {"address": "127.0.0.1", "port": 7421},
+  "data_dir": "/tmp/task-scheduler-m7-demo",
+  "logging": {"level": "info", "destination": "stderr"}
+}
