@@ -287,9 +287,12 @@ class M8Loopback(Harness):
         normal = self.submit("/bin/true")
         self.complete(normal)
         path = self.db("SELECT stdout_path FROM attempts WHERE task_id=?", (normal,))[0][0]
-        (self.root / "data" / path).unlink()  # test corrupts completed history
         peer = self.peer()
-        response = peer.request(0x0107, dict(task_id=normal, attempt_no=None, stream="stdout", offset=0, snapshot_end=None), 7)
+        query = dict(task_id=normal, attempt_no=None, stream="stdout", offset=0, snapshot_end=None)
+        (self.root / "data" / path).chmod(0o666)  # test corrupts filesystem safety
+        self.assertEqual(peer.request(0x0107, query, 6)[2]["code"], "INTERNAL")
+        (self.root / "data" / path).unlink()  # test corrupts completed history
+        response = peer.request(0x0107, query, 7)
         self.assertEqual(response[2]["code"], "INTERNAL")
         self.assertTrue(self.get(normal)["attempts"][0]["logs_complete"], "read must not rewrite committed history")
         self.stop(actual)

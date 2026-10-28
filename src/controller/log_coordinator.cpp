@@ -173,7 +173,10 @@ common::Result<std::vector<LogReply>> LogCoordinator::drain() {
                 throw std::runtime_error("log completion identity/counters invariant");
             auto operation = std::move(pending->second); s.pending.erase(pending);
             if (result.kind == logs::Kind::Read) {
-                protocol::Message message = protocol::ErrorResponse{result.error && result.error->code == logs::ErrorCode::Invalid ?
+                // Only invalid snapshot bounds are a client argument error.
+                // Unsafe/malformed filesystem entries are server-side read failures.
+                protocol::Message message = protocol::ErrorResponse{result.error && result.error->code == logs::ErrorCode::Invalid &&
+                    result.error->operation == logs::Operation::Read ?
                     protocol::ErrorCode::InvalidArgument : protocol::ErrorCode::Internal, "snapshot read failed", false, nlohmann::json::object()};
                 if (!result.error) {
                     message = protocol::GetLogsResponse{domain::TaskId::parse(result.binding.task).value(),
