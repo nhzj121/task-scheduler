@@ -279,8 +279,28 @@ struct Writer::Impl {
                     std::unique_lock<std::mutex> lock(mutex);
                     available.wait(lock, [&] { return stopping || !writes.empty() || !essential.empty() || !reads.empty(); });
                     if (writes.empty() && essential.empty() && reads.empty()) { if (stopping) break; else continue; }
-                    auto* queue = !essential.empty() && !prior_write(essential.front()) ? &essential : !writes.empty() ? &writes : &reads;
-                    command = std::move(queue->front()); queue->pop_front();
+                    const auto ready = std::find_if(essential.begin(), essential.end(), [&](const auto& candidate) { return !prior_write(candidate); });
+                    if (ready != essential.end()) {
+                        command = std::move(*ready); essential.erase(ready);
+                    } else {
+                        // Even a one-slot essential reserve must make progress:
+                        // finish the snapshot blocking retirement before unrelated
+                        // continuous writes can strand that reserved slot forever.
+                        auto dependency = reads.end();
+                        for (const auto& retirement : essential) {
+                            if (retirement.kind != Kind::Forget) continue;
+                            const auto same = [&](const auto& c) { return c.binding.attempt == retirement.binding.attempt; };
+                            if (std::any_of(writes.begin(), writes.end(), same)) continue;
+                            dependency = std::find_if(reads.begin(), reads.end(), same);
+                            if (dependency != reads.end()) break;
+                        }
+                        if (dependency != reads.end()) {
+                            command = std::move(*dependency); reads.erase(dependency);
+                        } else {
+                            auto& queue = !writes.empty() ? writes : reads;
+                            command = std::move(queue.front()); queue.pop_front();
+                        }
+                    }
                 }
                 Completion result; result.operation = command.operation; result.kind = command.kind;
                 result.binding = std::move(command.binding); command.binding = result.binding;

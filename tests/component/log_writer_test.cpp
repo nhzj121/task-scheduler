@@ -280,4 +280,49 @@ TEST_F(LogWriter, RetirementCannotEraseVisiblePositionsBeforeAnAcceptedSnapshot)
     EXPECT_EQ(result.value()[1].kind, Kind::Read); EXPECT_EQ(result.value()[1].data, "x");
     EXPECT_EQ(result.value()[1].snapshot_end, 1U); EXPECT_EQ(result.value()[2].kind, Kind::Forget);
 }
+TEST_F(LogWriter, BlockedRetirementCannotHideAnotherAttemptsReadyFinalBarrier) {
+    { std::lock_guard<std::mutex> lock(hook->mutex); hook->block_write = true; }
+    start();
+    Command append; append.data = "x"; append.binding = binding; append.operation = operation++;
+    ASSERT_EQ(writer->try_post(append), Admission::Accepted);
+    { std::unique_lock<std::mutex> lock(hook->mutex); ASSERT_TRUE(hook->cv.wait_for(lock, std::chrono::seconds(2), [&] { return hook->entered; })); }
+    Command read; read.kind = Kind::Read; read.binding = binding; read.operation = operation++;
+    ASSERT_EQ(writer->try_post(read), Admission::Accepted);
+    Command forget; forget.kind = Kind::Forget; forget.binding = binding; forget.operation = operation++;
+    ASSERT_EQ(writer->try_post(forget), Admission::Accepted);
+    Command barrier; barrier.kind = Kind::Barrier; barrier.binding = binding; barrier.operation = operation++;
+    barrier.binding.attempt = domain::AttemptId::generate().value(); barrier.binding.number = 2;
+    const auto stem = "tasks/" + binding.task + "/attempt-2";
+    barrier.binding.stdout_path = stem + ".stdout.log"; barrier.binding.stderr_path = stem + ".stderr.log";
+    ASSERT_EQ(writer->try_post(barrier), Admission::Accepted);
+    writer->stop();
+    { std::lock_guard<std::mutex> lock(hook->mutex); hook->proceed = true; hook->cv.notify_all(); }
+    writer->join();
+    const auto result = writer->drain(); ASSERT_TRUE(result); ASSERT_EQ(result.value().size(), 4U);
+    EXPECT_EQ(result.value()[1].kind, Kind::Barrier); EXPECT_TRUE(result.value()[1].barrier_ok);
+    EXPECT_EQ(result.value()[2].kind, Kind::Read); EXPECT_EQ(result.value()[2].data, "x");
+    EXPECT_EQ(result.value()[3].kind, Kind::Forget);
+}
+TEST_F(LogWriter, SnapshotDependencyReleasesASingleEssentialSlotBeforeUnrelatedWrites) {
+    { std::lock_guard<std::mutex> lock(hook->mutex); hook->block_write = true; }
+    Limits limits; limits.essential_slots = 1; start(limits);
+    Command append; append.data = "x"; append.binding = binding; append.operation = operation++;
+    ASSERT_EQ(writer->try_post(append), Admission::Accepted);
+    { std::unique_lock<std::mutex> lock(hook->mutex); ASSERT_TRUE(hook->cv.wait_for(lock, std::chrono::seconds(2), [&] { return hook->entered; })); }
+    Command read; read.kind = Kind::Read; read.binding = binding; read.operation = operation++;
+    ASSERT_EQ(writer->try_post(read), Admission::Accepted);
+    Command forget; forget.kind = Kind::Forget; forget.binding = binding; forget.operation = operation++;
+    ASSERT_EQ(writer->try_post(forget), Admission::Accepted);
+    append.operation = operation++; append.binding.attempt = domain::AttemptId::generate().value(); append.binding.number = 2;
+    const auto stem = "tasks/" + binding.task + "/attempt-2";
+    append.binding.stdout_path = stem + ".stdout.log"; append.binding.stderr_path = stem + ".stderr.log";
+    ASSERT_EQ(writer->try_post(append), Admission::Accepted);
+    writer->stop();
+    { std::lock_guard<std::mutex> lock(hook->mutex); hook->proceed = true; hook->cv.notify_all(); }
+    writer->join();
+    const auto result = writer->drain(); ASSERT_TRUE(result); ASSERT_EQ(result.value().size(), 4U);
+    EXPECT_EQ(result.value()[1].kind, Kind::Read); EXPECT_EQ(result.value()[1].data, "x");
+    EXPECT_EQ(result.value()[2].kind, Kind::Forget); EXPECT_EQ(result.value()[3].kind, Kind::Append);
+    EXPECT_EQ(writer->usage().essential, 0U);
+}
 } // namespace
