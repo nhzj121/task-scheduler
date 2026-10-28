@@ -13,7 +13,7 @@
 #include <spdlog/spdlog.h>
 
 #include "ts/controller/task_manager.h"
-#include "ts/controller/provisional_staging.h"
+#include "ts/controller/log_coordinator.h"
 #include "ts/controller/views.h"
 #include "ts/io/signal_fd.h"
 #include "ts/io/timer_fd.h"
@@ -50,7 +50,6 @@ std::string wire(const protocol::Message& message, std::uint64_t request, protoc
 struct Application::Impl final : PersistencePort, EffectPort {
     struct Observation {
         domain::TaskId task;
-        protocol::LogContext logs{{}, {}, 0, 0};
         bool acked{false}, started{false}, finished{false};
     };
     struct Peer {
@@ -75,11 +74,12 @@ struct Application::Impl final : PersistencePort, EffectPort {
         std::vector<storage::AttemptRow> history;
         bool sent{false};
         unsigned int retries{0};
+        std::optional<protocol::GetLogs> log_request{};
     };
     domain::ControllerConfig config;
     ApplicationOptions options;
     domain::SessionId instance{domain::SessionId::generate()};
-    ProvisionalStaging staging;
+    std::unique_ptr<LogCoordinator> logs;
     std::unique_ptr<io::EventLoop> loop;
     std::unique_ptr<net::ConnectionManager> clients, workers;
     std::unique_ptr<persistence::Channel> channel;
@@ -87,7 +87,7 @@ struct Application::Impl final : PersistencePort, EffectPort {
     std::optional<io::SignalFd> signals;
     std::optional<io::TimerFd> timer;
     sigset_t previous_mask{}; bool mask_owned{false};
-    std::optional<io::RegistrationToken> signal_token, timer_token, persistence_token;
+    std::optional<io::RegistrationToken> signal_token, timer_token, persistence_token, log_token;
     std::optional<net::ListenerId> client_listener, worker_listener;
     std::map<std::uint64_t, std::unique_ptr<Peer>> client_peers, worker_peers;
     std::map<std::uint64_t, Query> queries;
@@ -99,19 +99,21 @@ struct Application::Impl final : PersistencePort, EffectPort {
     std::uint64_t next_query{query_base};
     std::size_t registration_admissions{0};
     bool initialized_reads{false}, ready{false}, stop_requested{false}, stopping{false}, fatal{false};
+    bool restored{false};
     Clock::time_point stop_deadline{}, startup_deadline{Clock::now() + std::chrono::seconds(30)};
 
     Impl(domain::ControllerConfig value, ApplicationOptions bounds)
-        : config(std::move(value)), options(std::move(bounds)), staging(config.queues) {}
+        : config(std::move(value)), options(std::move(bounds)) {}
     ~Impl() {
         // Owners are torn down outside dispatch. Any deferred erasures are either
         // consumed while this owner lives or discarded with the final EventLoop.
+        if (logs) { logs->stop(); logs->join(); }
         if (channel) { channel->stop(); channel->join(); }
         manager.reset(); clients.reset(); workers.reset(); client_peers.clear(); worker_peers.clear();
-        for (const auto* token : {&persistence_token, &timer_token, &signal_token}) {
+        for (const auto* token : {&log_token, &persistence_token, &timer_token, &signal_token}) {
             if (*token && loop && !loop->remove(**token)) std::terminate();
         }
-        channel.reset(); timer.reset(); signals.reset(); loop.reset();
+        logs.reset(); channel.reset(); timer.reset(); signals.reset(); loop.reset();
         if (mask_owned && ::pthread_sigmask(SIG_SETMASK, &previous_mask, nullptr) != 0) std::terminate();
     }
     void fail(const std::string& reason) {
@@ -147,6 +149,8 @@ struct Application::Impl final : PersistencePort, EffectPort {
         decisions.heartbeat_interval_ms = config.heartbeat.interval_ms; decisions.offline_timeout_ms = config.heartbeat.offline_timeout_ms;
         decisions.ack_timeout_ms = config.dispatch.ack_timeout_ms; decisions.start_timeout_ms = config.dispatch.start_timeout_ms;
         manager = std::make_unique<TaskManager>(*this, *this, decisions);
+        logs = checked(LogCoordinator::create(config.data_dir, config.queues, *manager, options.log_hook));
+        log_token = checked(loop->add(logs->fd(), io::kReadable, [this](const auto&, auto) { log_completions(); }));
         persistence_token = checked(loop->add(channel->fd(), io::kReadable, [this](const auto&, auto) { persistence_ready(); }));
         net::TransportLimits limits; limits.maximum_connections = options.limits.connections_per_role;
         clients = checked(net::ConnectionManager::create(*loop, {
@@ -189,9 +193,8 @@ struct Application::Impl final : PersistencePort, EffectPort {
             const auto result = manager->connection_closed(peer.identity);
             if (result == Decision::Degraded) fail("session-close persistence unavailable");
         }
-        // Keep registered staging until the committed WorkerOffline effect. An
-        // unaccepted registration owns no live lease and can release immediately.
-        if (worker && !peer.session && peer.registration) static_cast<void>(staging.reclaim(peer.registration->session_id));
+        // Reclaim UNUSED grants now, not accepted queued/inflight writes.
+        if (worker && peer.registration) logs->reclaim(peer.registration->session_id);
         checked(loop->defer([this, id = event.id, worker] {
             (worker ? worker_peers : client_peers).erase(id.value);
         }));
@@ -273,6 +276,10 @@ struct Application::Impl final : PersistencePort, EffectPort {
             } else if constexpr (std::is_same_v<T, protocol::GetTask>) {
                 if (!post_query({QueryKind::GetTask, {{}, storage::ReadTask{request.task_id.value()}, 512}, client, {}, {}, false}))
                     error(client, protocol::ErrorCode::TemporarilyUnavailable, "query capacity", true);
+            } else if constexpr (std::is_same_v<T, protocol::GetLogs>) {
+                Query query{QueryKind::GetTask, {{}, storage::ReadTask{request.task_id.value()}, 512}, client, {}, {}, false};
+                query.log_request = request;
+                if (!post_query(std::move(query))) error(client, protocol::ErrorCode::TemporarilyUnavailable, "query capacity", true);
             } else if constexpr (std::is_same_v<T, protocol::ListTasks>) {
                 std::optional<storage::TaskCursor> cursor;
                 if (request.page_token) {
@@ -316,13 +323,13 @@ struct Application::Impl final : PersistencePort, EffectPort {
             // M6 retains session UUID tombstones. Bound successful registration
             // admissions across this Controller lifetime, not only open sockets.
             if (registration_admissions >= options.limits.registrations) return reject("registration metadata capacity");
-            const auto reserved = staging.reserve(request->session_id);
+            const auto reserved = logs->reserve(request->session_id);
             if (!reserved) return reject(reserved.error().message);
             peer.registration = Registration{request->worker_id, request->session_id, peer.identity, request->capacity, request->max_concurrent_tasks};
             peer.registration_request = header.request_id;
             const auto result = manager->register_worker(*peer.registration);
             if (result == Decision::Rejected) {
-                static_cast<void>(staging.reclaim(request->session_id)); return reject("identity/session registration rejected");
+                logs->reclaim(request->session_id); return reject("identity/session registration rejected");
             }
             if (result != Decision::Accepted) { fail("registration persistence unavailable"); return false; }
             ++registration_admissions;
@@ -367,13 +374,12 @@ struct Application::Impl final : PersistencePort, EffectPort {
                             else if (result != Decision::Accepted && result != Decision::Deferred) valid = false;
                         } else if constexpr (std::is_same_v<T, protocol::LogChunk>) {
                             if (!observation.started) { valid = false; return; }
-                            const auto admitted = staging.append(event, observation.logs);
-                            if (admitted == StagingAdmission::InvariantFailure) fail("credited chunk cannot enter pre-reserved volatile staging");
-                            valid = admitted == StagingAdmission::Accepted;
+                            const auto admitted = logs->append(event);
+                            if (admitted == LogAdmission::InvariantFailure) fail("credited chunk cannot enter reserved LogWriter capacity");
+                            valid = admitted == LogAdmission::Accepted;
                         } else {
                             if ((event.outcome == protocol::Outcome::LaunchFailed && observation.started) ||
-                                (event.outcome != protocol::Outcome::LaunchFailed && event.outcome != protocol::Outcome::Cancelled && !observation.started) ||
-                                !protocol::check_finish(event, observation.logs)) { valid = false; return; }
+                                (event.outcome != protocol::Outcome::LaunchFailed && event.outcome != protocol::Outcome::Cancelled && !observation.started)) { valid = false; return; }
                             const auto history = manager->attempts(event.task_id);
                             const auto row = std::find_if(history.begin(), history.end(), [&](const auto& a) { return a.attempt_id == event.attempt_id.value(); });
                             if (row == history.end()) { valid = false; return; }
@@ -389,14 +395,12 @@ struct Application::Impl final : PersistencePort, EffectPort {
                             FinishedEvent finished{event.attempt_id, key, outcome, event.exit_code, event.term_signal, event.reason,
                                 row->stdout_path, row->stderr_path, event.stdout_bytes, event.stderr_bytes,
                                 event.stdout_next_sequence, event.stderr_next_sequence, {}, false};
-                            // Incomplete evidence is intentional: even zero-byte /bin/true
-                            // has no file-data/directory-namespace barrier in M7.
-                            const auto result = manager->receive(event.task_id, std::move(finished));
-                            if (result == Decision::Degraded) fail("FINISH retention unavailable");
-                            else if (result != Decision::WaitingForLogs && result != Decision::Deferred) valid = false;
+                            const auto result = logs->finish(std::move(finished));
+                            if (manager->degraded()) fail("FINISH retention unavailable");
+                            if (!result) valid = false;
                             else {
                                 observation.finished = true;
-                                spdlog::info("FINISH observed task={} attempt={} finalization held for M8", event.task_id.value(), event.attempt_id.value());
+                                spdlog::info("FINISH observed task={} attempt={} awaiting log barrier/metadata", event.task_id.value(), event.attempt_id.value());
                             }
                         }
                     }
@@ -428,10 +432,14 @@ struct Application::Impl final : PersistencePort, EffectPort {
         if (manager->restore(std::move(restore_tasks), std::move(restore_attempts)) != Decision::Accepted) {
             fail("recovered snapshot rejected by M6"); return;
         }
+        restored = true; start_listeners();
+    }
+    void start_listeners() {
+        if (ready || !restored || stopping || fatal || logs->status().health != logs::Health::Ready) return;
         client_listener = checked(clients->listen({config.client_listen.address, config.client_listen.port}));
         worker_listener = checked(workers->listen({config.worker_listen.address, config.worker_listen.port}));
         ready = true;
-        spdlog::info("READY client={}:{} worker={}:{} (M7: no durable log finalization)", config.client_listen.address,
+        spdlog::info("READY client={}:{} worker={}:{} (durable task logs)", config.client_listen.address,
             config.client_listen.port, config.worker_listen.address, config.worker_listen.port);
     }
     bool charge_restore(const storage::Outcome& outcome) {
@@ -520,6 +528,17 @@ struct Application::Impl final : PersistencePort, EffectPort {
                 query.kind = QueryKind::GetTask; query.task.reset(); query.history.clear();
                 static_cast<void>(repost(std::move(query), storage::ReadTask{id.value()})); return;
             }
+            if (query.log_request) {
+                const auto& request = *query.log_request;
+                const auto selected = std::find_if(query.history.begin(), query.history.end(), [&](const auto& attempt) {
+                    return request.attempt_no ? attempt.attempt_no == request.attempt_no->value() :
+                        current.latest_attempt_id == attempt.attempt_id;
+                });
+                if (selected == query.history.end()) { error(*query.client, protocol::ErrorCode::NotFound, "Attempt not found"); return; }
+                const auto admitted = logs->read(*selected, request, *query.client);
+                if (!admitted) error(*query.client, protocol::ErrorCode::TemporarilyUnavailable, admitted.error().message, true);
+                return;
+            }
             protocol::GetTaskResponse response{task_view(current), {}};
             for (const auto& attempt : query.history) response.attempts.push_back(attempt_view(attempt,
                 current.latest_attempt_id == attempt.attempt_id && manager->finalization_pending(id)));
@@ -565,6 +584,12 @@ struct Application::Impl final : PersistencePort, EffectPort {
             if (!post_query({QueryKind::RestoreTasks, {{}, storage::ListTasks{{}, true, {}, 200}, 512}, {}, {}, {}, false})) fail("startup query bound");
         }
     }
+    void log_completions() {
+        auto responses = logs->drain();
+        if (!responses) { fail(responses.error().message); return; }
+        for (auto& response : responses.value()) if (!fatal && !stopping) reply(response.client, std::move(response.message));
+        start_listeners();
+    }
     void drain_effects() {
         const auto count = std::min(effects.size(), std::size_t{256});
         for (std::size_t i = 0; i < count && !fatal; ++i) {
@@ -589,8 +614,10 @@ struct Application::Impl final : PersistencePort, EffectPort {
                     fail("registration effect correlation invariant"); break;
                 }
                 peer.session = key;
+                checked(logs->activate(key));
                 protocol::RegisterAck ack{protocol::RegistrationAccepted{true, config.heartbeat.interval_ms,
-                    config.heartbeat.offline_timeout_ms, config.termination_grace_ms, staging.byte_window(), staging.chunk_window(), instance}};
+                    config.heartbeat.offline_timeout_ms, config.termination_grace_ms, config.queues.initial_session_log_window_bytes,
+                    config.queues.initial_session_log_window_chunks, instance}};
                 const auto sent = workers->send({key.connection.value}, {wire(ack, *peer.registration_request, protocol::Direction::ControllerToWorker)});
                 if (sent) { peer.registered = true; spdlog::info("Worker registered id={} session={}", key.worker_id.value(), key.session_id.value()); }
             } else if (effect.kind == EffectKind::RunEligible && effect.session && effect.task_id && effect.attempt_id) {
@@ -616,7 +643,9 @@ struct Application::Impl final : PersistencePort, EffectPort {
                     domain::ResourceRequest::create(s.cpu_slots, s.memory_mb).value(), s.timeout_ms};
                 const auto request = peer.next_request++; auto encoded = wire(run, request, protocol::Direction::ControllerToWorker);
                 peer.runs.emplace(request, *effect.attempt_id);
-                peer.observations.emplace(*effect.attempt_id, Observation{*effect.task_id, {{}, {}, 0, 0}, false, false, false});
+                peer.observations.emplace(*effect.attempt_id, Observation{*effect.task_id, false, false, false});
+                const auto bound = logs->bind(*attempt, *effect.session);
+                if (!bound) { if (manager->invalidate(*effect.session) == Decision::Degraded) fail(bound.error().message); continue; }
                 // Record possible transmission BEFORE any byte enters M3's output
                 // path. A failed enqueue/partial send is conservative session loss.
                 if (!manager->effect_is_current(effect) || manager->record_dispatch(effect, DispatchFact::BytesMayHaveEscaped) != Decision::Accepted) {
@@ -625,12 +654,13 @@ struct Application::Impl final : PersistencePort, EffectPort {
                 const auto sent = workers->send({effect.session->connection.value}, {std::move(encoded)});
                 if (!sent) spdlog::warn("RUN transport closed: {}", sent.error().message);
             } else if (effect.kind == EffectKind::WorkerOffline && effect.session) {
-                static_cast<void>(staging.reclaim(effect.session->session_id));
+                logs->reclaim(effect.session->session_id);
             } else if (effect.kind == EffectKind::CloseConnection && effect.session) {
                 const auto it = worker_peers.find(effect.session->connection.value);
                 if (it != worker_peers.end() && !it->second->closing && it->second->identity == effect.session->connection)
                     checked(workers->close({effect.session->connection.value}));
             } else if (effect.kind == EffectKind::TerminalVisible && effect.session && effect.attempt_id) {
+                logs->terminal(*effect.attempt_id);
                 const auto it = worker_peers.find(effect.session->connection.value);
                 if (it != worker_peers.end() && it->second->identity == effect.session->connection)
                     it->second->observations.erase(*effect.attempt_id);
@@ -648,6 +678,7 @@ struct Application::Impl final : PersistencePort, EffectPort {
             if (record.second.current && manager->invalidate(record.second.current->key) == Decision::Degraded) {
                 fail("shutdown session-loss persistence unavailable"); break;
             }
+            if (record.second.current) logs->reclaim(record.second.current->key.session_id);
         }
     }
     void close_sockets() {
@@ -670,6 +701,7 @@ struct Application::Impl final : PersistencePort, EffectPort {
                 const auto polled = loop->poll_once(1000);
                 if (!polled) fail(polled.error().message);
                 const auto status = channel->status();
+                if (!fatal && logs->status().health == logs::Health::Failed) fail("LogWriter channel/owner failure");
                 if (!fatal && (status.health == storage::Health::Degraded || status.health == storage::Health::Stopped))
                     fail(status.error ? status.error->message : "persistence unexpectedly stopped");
                 if (!fatal && manager->tick(monotonic_ms(), common::Timestamp::now()) == Decision::Degraded) fail("maintenance decision degraded");
@@ -677,6 +709,14 @@ struct Application::Impl final : PersistencePort, EffectPort {
                 if (stop_requested && !stopping) begin_stop();
                 if (fatal) { close_sockets(); break; }
                 drain_effects();
+                if (!fatal) {
+                    const auto progress = logs->pump([this](const SessionKey& key, LogCredit credit) {
+                        if (stopping || !manager->workers().valid(key, monotonic_ms())) return false;
+                        return static_cast<bool>(workers->send({key.connection.value}, {wire(protocol::LogWindowUpdate{credit.bytes, credit.slots},
+                            0, protocol::Direction::ControllerToWorker)}));
+                    });
+                    if (!progress) fail(progress.error().message);
+                }
                 if (!stopping && !fatal) {
                     drive_queries();
                     const auto result = manager->pump();
@@ -684,7 +724,9 @@ struct Application::Impl final : PersistencePort, EffectPort {
                 }
                 flush_rejections();
                 if (fatal) continue;
-                if (stopping && manager->retained().pending_count == 0 && channel->usage().count == 0) {
+                const auto log_usage = logs->usage();
+                if (stopping && manager->retained().pending_count == 0 && channel->usage().count == 0 &&
+                    !log_usage.writes && !log_usage.essential && !log_usage.reads) {
                     drain_effects(); close_sockets(); break;
                 }
                 if (stopping && Clock::now() >= stop_deadline) { fail("bounded shutdown cleanup deadline"); close_sockets(); break; }
@@ -694,7 +736,7 @@ struct Application::Impl final : PersistencePort, EffectPort {
             // Destruction below is outside EventLoop dispatch and unregisters all
             // sockets. Workers then own the explicit local process cleanup.
         }
-        channel->stop(); channel->join();
+        logs->stop(); logs->join(); channel->stop(); channel->join();
         return fatal ? 1 : 0;
     }
 };

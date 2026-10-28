@@ -4,6 +4,7 @@
 #include "ts/domain/config.h"
 #include "ts/net/connection_manager.h"
 #include "ts/storage/persistence_thread.h"
+#include "ts/logs/writer.h"
 
 namespace ts::controller {
 struct ApplicationLimits {
@@ -13,9 +14,10 @@ struct ApplicationLimits {
 };
 struct ApplicationOptions {
     ApplicationLimits limits;
-    // Existing technical seams; normal executables leave these empty. Hooks
-    // execute only on the real PersistenceThread, never on the EventLoop.
+    // Test composition seams; normal executables leave these empty. SQLite hooks
+    // run on PersistenceThread and filesystem hooks on LogWriterThread.
     std::shared_ptr<storage::SqliteHook> persistence_hook;
+    std::shared_ptr<logs::FilesystemHook> log_hook;
     net::SocketIo client_io, worker_io;
 };
 class Application final {

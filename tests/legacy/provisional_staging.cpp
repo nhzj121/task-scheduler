@@ -1,4 +1,5 @@
 #include "ts/controller/provisional_staging.h"
+// Preserves the accepted M7 staging unit cases, never the M8 production data path.
 
 #include <algorithm>
 #include <stdexcept>

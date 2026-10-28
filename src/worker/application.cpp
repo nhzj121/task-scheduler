@@ -27,6 +27,7 @@ std::string wire(const protocol::Message& m, std::uint64_t request) {
 }
 struct Application::Impl {
     domain::WorkerConfig config;
+    ApplicationOptions options;
     domain::SessionId session{domain::SessionId::generate()};
     std::unique_ptr<io::EventLoop> loop;
     std::unique_ptr<net::ConnectionManager> transport;
@@ -40,7 +41,7 @@ struct Application::Impl {
     bool registered{false}, stopping{false}, stop_requested{false}, fatal{false}, tick_due{false};
     std::uint64_t heartbeat_ms{3000}, heartbeat_sequence{0}, grace_ms{1000};
     Clock::time_point next_heartbeat{}, connect_deadline{Clock::now() + std::chrono::seconds(5)}, stop_deadline{};
-    explicit Impl(domain::WorkerConfig c) : config(std::move(c)) {}
+    Impl(domain::WorkerConfig c, ApplicationOptions o) : config(std::move(c)), options(std::move(o)) {}
     ~Impl() {
         transport.reset();
         for (const auto* token : {&timer_token, &signal_token})
@@ -69,7 +70,7 @@ struct Application::Impl {
             },
             [this](auto id, auto data) { return bytes(id, data); },
             [this](auto) { connection.reset(); if (!stopping) fail("Controller connection closed; no M7 reconnect"); }
-        }));
+        }, {}, std::move(options.socket_io)));
         // MUST precede SIGINT/SIGTERM blocking. M4's restored child mask must
         // allow normal group termination. No fork path is implemented here.
         execution = checked(ExecutionManager::create(config, session,
@@ -109,6 +110,9 @@ struct Application::Impl {
                 spdlog::info("REGISTERED worker={} session={}", config.worker_id.value(), session.value());
             } else if (const auto* task = std::get_if<protocol::RunTask>(&decoded.value())) {
                 const auto result = execution->accept(*task, frame.header.request_id);
+                if (!result) { fail(result.error().message); return false; }
+            } else if (const auto* grant = std::get_if<protocol::LogWindowUpdate>(&decoded.value())) {
+                const auto result = execution->grant(*grant);
                 if (!result) { fail(result.error().message); return false; }
             } else { fail("unsupported or out-of-phase Controller command in M7"); return false; }
             return !stop_requested;
@@ -155,10 +159,10 @@ struct Application::Impl {
 };
 Application::Application(std::unique_ptr<Impl> impl) : impl_(std::move(impl)) {}
 Application::~Application() = default;
-common::Result<std::unique_ptr<Application>> Application::create(domain::WorkerConfig config) {
+common::Result<std::unique_ptr<Application>> Application::create(domain::WorkerConfig config, ApplicationOptions options) {
     using R = common::Result<std::unique_ptr<Application>>;
     try {
-        auto impl = std::make_unique<Impl>(std::move(config)); impl->initialize();
+        auto impl = std::make_unique<Impl>(std::move(config), std::move(options)); impl->initialize();
         return R::success(std::unique_ptr<Application>(new Application(std::move(impl))));
     } catch (const std::exception& e) { return R::failure(e.what()); }
 }

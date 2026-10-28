@@ -141,6 +141,16 @@ common::Result<void> ExecutionManager::activate(const protocol::RegistrationAcce
     s.active = true; s.bytes = ack.initial_log_window_bytes; s.chunks = ack.initial_log_window_chunks;
     s.grace_ms = ack.termination_grace_ms; return R::success();
 }
+common::Result<void> ExecutionManager::grant(const protocol::LogWindowUpdate& window) {
+    using R = common::Result<void>; auto& s = *impl_;
+    if (!s.active || s.stopping || (!window.grant_bytes && !window.grant_chunks) ||
+        window.grant_bytes > UINT64_MAX - s.bytes || window.grant_chunks > UINT64_MAX - s.chunks)
+        return R::failure("invalid/overflowing log window update");
+    s.bytes += window.grant_bytes; s.chunks += window.grant_chunks;
+    // The paced main-loop tick re-enables eligible pipe registrations; no busy spin
+    // and no read callback is invoked recursively from this transport callback.
+    return R::success();
+}
 common::Result<void> ExecutionManager::accept(const protocol::RunTask& task, std::uint64_t request) {
     using R = common::Result<void>; auto& s = *impl_;
     try {

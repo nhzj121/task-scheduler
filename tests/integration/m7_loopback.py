@@ -230,9 +230,11 @@ class M7Loopback(Harness):
         a = self.worker("worker-a")
         b = self.worker("worker-b")
         self.assertEqual(len(self.workers()), 2)
-        ids = [self.submit("/bin/true") for _ in range(2)]
+        # M8 completes /bin/true durably. Keep real workloads running until the
+        # crash so this retained M7 test still exercises ACTIVE -> LOST recovery.
+        ids = [self.submit("/bin/sleep", "30") for _ in range(2)]
         for task in ids:
-            eventually(lambda: self.get(task)["attempts"] and self.get(task)["attempts"][0]["finalization_pending"])
+            eventually(lambda: self.get(task)["attempts"] and self.get(task)["attempts"][0]["state"] == "RUNNING")
             view = self.get(task)
             self.assertEqual(view["task"]["state"], "ACTIVE")
             self.assertEqual(view["attempts"][0]["state"], "RUNNING")
@@ -350,7 +352,8 @@ class M7Loopback(Harness):
         self.assertIsNone(offline["session_id"])
         self.assertEqual(offline["reserved"]["cpu_slots"], 0)
         actual = self.worker("raw-worker")
-        eventually(lambda: self.get(second)["attempts"] and self.get(second)["attempts"][0]["finalization_pending"])
+        eventually(lambda: self.get(second)["task"]["state"] == "SUCCEEDED")
+        self.assertTrue(self.get(second)["attempts"][0]["logs_complete"])
         self.stop(actual)
 
     def test_essential_failure_and_unknown_commit_fail_stop_without_false_effects(self):
@@ -404,7 +407,11 @@ class M7Loopback(Harness):
         peer = self.peer()
         for token in ("bad", "a" * 257):
             self.assertEqual(peer.request(0x0105, dict(page_token=token), 3)[2]["code"], "INVALID_ARGUMENT")
-        for operation in ("logs", "cancel", "retry"):
+        # Logs is implemented in M8; cancel/retry remain explicit M9 exclusions.
+        pending = self.submit("--cpu", "100", "/bin/true")
+        self.assertEqual(peer.request(0x0107, dict(task_id=pending, attempt_no=None, stream="stdout", offset=0,
+                                                snapshot_end=None), 4)[2]["code"], "NOT_FOUND")
+        for operation in ("cancel", "retry"):
             self.assertEqual(self.cli(operation, task, code=2)[0]["code"], "UNSUPPORTED")
 
     def test_registration_replacement_heartbeat_and_staging_exhaustion(self):
@@ -556,9 +563,9 @@ class M7Loopback(Harness):
         finished = dict(**binding, task_id=run["task_id"], outcome="EXITED", exit_code=0, term_signal=None,
                         reason=None, stdout_next_sequence=0, stderr_next_sequence=0, stdout_bytes=0, stderr_bytes=0)
         new.sock.sendall(frame(0x0205, ack, request) + frame(0x0206, started) + frame(0x0209, finished))
-        eventually(lambda: self.get(coalesced_task)["attempts"][0]["finalization_pending"])
+        eventually(lambda: self.get(coalesced_task)["task"]["state"] == "SUCCEEDED")
         self.assertEqual(self.db("SELECT state,state_version,logs_complete FROM attempts WHERE task_id=?", (coalesced_task,)),
-                         [("RUNNING", 2, 0)])
+                         [("SUCCEEDED", 3, 1)])
 
     def test_startup_read_failure_never_opens_ready_listeners(self):
         notify_read, notify_write = os.pipe()
@@ -580,13 +587,13 @@ class M7Loopback(Harness):
         self.worker("worker-a", cpu=2)
         ids = [self.submit("--cwd", "/no-such-m7-directory", "/bin/true"), self.submit("/no-such-m7-executable")]
         for task in ids:
-            eventually(lambda: self.get(task)["attempts"] and self.get(task)["attempts"][0]["finalization_pending"])
+            eventually(lambda: self.get(task)["task"]["state"] == "FAILED")
             attempt = self.get(task)["attempts"][0]
-            self.assertEqual(attempt["state"], "STARTING")
+            self.assertEqual(attempt["state"], "FAILED")
             self.assertIsNone(attempt["started_at"])
-            self.assertFalse(attempt["logs_complete"])
+            self.assertTrue(attempt["logs_complete"])
             self.assertEqual(self.db("SELECT state,logs_complete,started_at FROM attempts WHERE task_id=?", (task,)),
-                             [("STARTING", 0, None)])
+                             [("FAILED", 1, None)])
 
     def test_connection_output_pressure_is_bounded_and_other_clients_survive(self):
         self.controller()
@@ -605,7 +612,7 @@ class M7Loopback(Harness):
         self.assertEqual(self.workers(), [])
         slow.close()
         eventually(lambda: len(list(Path(f"/proc/{self.proc.pid}/fd").iterdir())) <= baseline)
-        self.assertEqual(len(list(Path(f"/proc/{self.proc.pid}/task").iterdir())), 2)
+        self.assertEqual(len(list(Path(f"/proc/{self.proc.pid}/task").iterdir())), 3)
 
     def test_partial_run_transport_failure_keeps_uncertainty_and_commits_lost(self):
         self.controller("partial-run")

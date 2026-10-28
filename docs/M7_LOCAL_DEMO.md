@@ -1,5 +1,9 @@
 # M7 local partial vertical slice
 
+Historical M7 checkpoint guide. For current binaries, use
+[M8 durable-log demo](M8_LOCAL_DEMO.md): normal finished Tasks now terminalize
+after the log barrier and SQLite commit, and `taskctl logs` is supported.
+
 This guide describes the implemented M7 binaries, not the final v1 service.
 Use Ubuntu 22.04.3 under WSL. No Docker, systemd, root privileges or remote host
 is needed. These are distinct OS processes exchanging real framed TCP packets.

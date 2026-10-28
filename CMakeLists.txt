@@ -109,9 +109,13 @@ target_include_directories(ts_controller_state PUBLIC include)
 target_link_libraries(ts_controller_state PUBLIC ts_scheduler ts_storage)
 ts_enable_project_warnings(ts_controller_state)
 
-add_library(ts_controller STATIC src/controller/provisional_staging.cpp src/controller/views.cpp src/controller/application.cpp)
+add_library(ts_controller STATIC src/controller/views.cpp src/controller/application.cpp src/controller/log_credit_ledger.cpp src/controller/log_coordinator.cpp)
+add_library(ts_logs STATIC src/logs/writer.cpp)
+target_include_directories(ts_logs PUBLIC include)
+target_link_libraries(ts_logs PUBLIC ts_common ts_domain ts_io Threads::Threads)
+ts_enable_project_warnings(ts_logs)
 target_include_directories(ts_controller PUBLIC include)
-target_link_libraries(ts_controller PUBLIC ts_controller_state ts_persistence ts_net ts_protocol spdlog::spdlog)
+target_link_libraries(ts_controller PUBLIC ts_controller_state ts_persistence ts_net ts_protocol ts_logs spdlog::spdlog)
 ts_enable_project_warnings(ts_controller)
 add_executable(controller src/apps/controller.cpp)
 target_link_libraries(controller PRIVATE ts_controller)
@@ -137,7 +141,13 @@ if(BUILD_TESTING)
   find_package(GTest 1.11 REQUIRED)
   include(GoogleTest)
 
-  add_executable(ts_milestone7_tests tests/component/m7_runtime_support_test.cpp tests/unit/m7_staging_test.cpp)
+  add_executable(ts_milestone8_tests tests/component/log_writer_test.cpp tests/unit/log_credit_test.cpp tests/component/log_coordinator_test.cpp)
+  target_link_libraries(ts_milestone8_tests PRIVATE ts_logs ts_controller GTest::gtest_main)
+  ts_enable_project_warnings(ts_milestone8_tests)
+  gtest_discover_tests(ts_milestone8_tests PROPERTIES LABELS m8 TIMEOUT 20)
+
+  add_executable(ts_milestone7_tests tests/component/m7_runtime_support_test.cpp tests/unit/m7_staging_test.cpp tests/legacy/provisional_staging.cpp)
+  target_include_directories(ts_milestone7_tests PRIVATE tests/legacy/include)
   target_link_libraries(ts_milestone7_tests PRIVATE ts_runtime ts_controller ts_client GTest::gtest_main)
   ts_enable_project_warnings(ts_milestone7_tests)
   gtest_discover_tests(ts_milestone7_tests NO_PRETTY_VALUES PROPERTIES LABELS "m7;component" TIMEOUT 20)
@@ -146,6 +156,37 @@ if(BUILD_TESTING)
   target_link_libraries(ts_m7_fault_controller PRIVATE ts_controller)
   ts_enable_project_warnings(ts_m7_fault_controller)
   find_program(TS_PYTHON_EXECUTABLE NAMES python3 REQUIRED)
+  add_executable(ts_log_workload tests/helpers/log_workload.cpp)
+  ts_enable_project_warnings(ts_log_workload)
+  add_executable(ts_m8_fault_controller tests/helpers/m8_fault_controller.cpp)
+  target_link_libraries(ts_m8_fault_controller PRIVATE ts_controller)
+  ts_enable_project_warnings(ts_m8_fault_controller)
+  add_executable(ts_m8_partial_worker tests/helpers/m8_partial_worker.cpp)
+  target_link_libraries(ts_m8_partial_worker PRIVATE ts_worker)
+  ts_enable_project_warnings(ts_m8_partial_worker)
+  foreach(m8_case IN ITEMS empty_real_barrier_terminal_release_and_restart
+      large_binary_multiple_replenishments_and_paged_cli_are_exact
+      active_snapshot_is_fixed_while_later_append_completes
+      every_file_directory_and_sql_gate_keeps_terminal_and_reservation_hidden
+      sync_and_open_failures_preserve_observed_outcome_as_log_persistence_error
+      write_error_before_finish_is_lost_not_a_fabricated_result
+      completion_gate_prevents_replenishment_until_success_is_delivered
+      crash_at_namespace_data_and_metadata_boundaries_never_infers_success
+      partial_tcp_sends_keep_both_streams_before_finish
+      stalled_writer_backpressures_multiple_workers_without_hiding_heartbeats
+      rejected_run_and_lost_and_missing_history_never_fabricate_logs
+      default_clamped_paging_and_binary_payload_stay_below_frame_limit
+      disconnect_and_replacement_during_write_or_barrier_fence_late_success
+      nonzero_and_signal_results_are_committed_only_with_complete_logs
+      finish_count_mismatch_and_late_log_are_protocol_faults
+      worker_pauses_independently_for_missing_bytes_or_slots_and_resumes_exactly
+      delayed_write_failure_after_finish_retains_outcome_and_never_syncs_success
+      completion_notification_failure_fail_stops_and_restart_is_conservative)
+    add_test(NAME M8Loopback.${m8_case}
+      COMMAND ${TS_PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/integration/m8_loopback.py
+      --bin $<TARGET_FILE_DIR:controller> --case test_${m8_case})
+    set_tests_properties(M8Loopback.${m8_case} PROPERTIES LABELS "m8;integration" TIMEOUT 60)
+  endforeach()
   foreach(m7_case IN ITEMS
       real_vertical_slice_two_workers_and_crash_recovery
       help_invalid_configuration_lock_and_clean_cycles

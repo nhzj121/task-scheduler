@@ -93,4 +93,27 @@ common::Result<std::size_t> Client::list(
     } while (token);
     return R::success(count);
 }
+common::Result<std::uint64_t> Client::logs(protocol::GetLogs request,
+    const std::function<void(const protocol::GetLogsResponse&)>& consume) {
+    using R = common::Result<std::uint64_t>;
+    std::uint64_t total = 0;
+    request.limit_bytes = std::min(request.limit_bytes, protocol::kMaxLogPage);
+    try {
+        for (;;) {
+            auto response = this->request(request);
+            if (!response) return R::failure(response.error().message);
+            if (const auto* error = std::get_if<protocol::ErrorResponse>(&response.value())) return R::failure(error->message);
+            const auto* page = std::get_if<protocol::GetLogsResponse>(&response.value());
+            if (!page || !(page->task_id == request.task_id) || page->stream != request.stream || page->offset != request.offset ||
+                (request.attempt_no && !(page->attempt_no == *request.attempt_no)) ||
+                (request.snapshot_end && page->snapshot_end != *request.snapshot_end) ||
+                (!page->eof_snapshot && page->next_offset <= request.offset)) return R::failure("log snapshot identity/progress mismatch");
+            const auto count = page->next_offset - page->offset;
+            if (count > UINT64_MAX - total) return R::failure("log snapshot byte count overflow");
+            consume(*page); total += count;
+            if (page->eof_snapshot) return R::success(total);
+            request.attempt_no = page->attempt_no; request.snapshot_end = page->snapshot_end; request.offset = page->next_offset;
+        }
+    } catch (const std::exception& e) { return R::failure(e.what()); }
+}
 } // namespace ts::client
