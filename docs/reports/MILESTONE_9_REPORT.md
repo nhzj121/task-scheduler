@@ -7,8 +7,8 @@ Date: 2026-10-29 (Asia/Shanghai). Scope: M9-A through M9-D only.
 - Accepted `main` and `origin/main`: `c18014eb474c5bcff9e9916fe648a760b0d631fa`.
 - Accepted M8 implementation: `75677e5cca70e153891c1a5600e8000dea365101`, verified ancestor of both main refs.
 - Work branch: `milestone-9-cancellation-recovery`, created from accepted main; no main changes, reset, force-push or merge.
-- Implementation commit: `f68fc692d2e739c64dbc0acc57afdd0d161a01ba` (`Complete M9 cancellation, retry, session cleanup and recovery`). The subsequent `Record M9 acceptance evidence and tested local demo` commit is the delivery HEAD; its exact SHA and remote equality are recorded in the final delivery message and verifiable with `git log -2`/`git rev-parse HEAD origin/milestone-9-cancellation-recovery`. A report cannot contain its own commit hash.
-- Delivery comparison: main-to-M9 ahead/behind is `0 2`; `main...origin/main` is `0 0`; local M9-to-origin M9 is `0 0` after the branch-only push. Both commits were reviewed; the tracked working tree is clean. No PR, merge or tag was created.
+- Initial implementation commit: `f68fc692d2e739c64dbc0acc57afdd0d161a01ba`; initial delivery/review baseline: `61d6ff9dd98b5fabb32de3bb462d376afd6ed045`. Independent review required the negative-CANCEL-ACK cleanup documented under J below. Cleanup implementation commit: `f74deb9b4b612cdbb77c5909ea46a2466b8b83fe` (`Invalidate unknown-Attempt cancel refusals unless FINISH is known`). The subsequent cleanup-evidence report commit is the delivery HEAD; its exact SHA and remote equality are recorded in the final delivery message and verifiable with `git log -4`/`git rev-parse HEAD origin/milestone-9-cancellation-recovery`. A report cannot contain its own commit hash.
+- Delivery comparison after cleanup: main-to-M9 `git rev-list --left-right --count main...HEAD` is `0 4`; `main...origin/main` and local M9-to-origin M9 are both `0 0` after the branch-only push. Original two commits and the entire cleanup diff are reviewed; the tracked working tree is clean. No PR, merge or tag is created.
 - The only original untracked file was the owner-supplied M9 authorization Markdown, carried onto this branch as authorized. All other changes listed below are M9 work.
 - Protected SHA-256 values before work and after validation:
   - `/home/nhzj121/build/task_scheduler/BUILD_COMMANDS.md`: `8bda49a0af4e612892bafdba48effb924573e02a6ccea33b3aa8bd5991d813ae`.
@@ -60,7 +60,7 @@ Narrow lower-layer corrections: retry overflow is rejected before acceptance; M4
 
 CANCEL uses the existing control output path and configured grace. A separate bounded map stores request ID, Task, Attempt, SessionKey and connection generation. RUN and CANCEL share monotonically allocated request IDs but never correlation entries. Delayed effects are revalidated immediately before enqueue. An ACK must match all current peer/request/Attempt identities; invalid fields, wrong UUID/request and duplicates invalidate the session.
 
-ACK clears only receipt correlation. accepted=false/already_terminal=true cannot terminalize, release resources or suppress a later authoritative FINISH. Correlation remains available after terminalization for a legitimately late ACK, then is removed on receipt or session destruction. No new ACK lease/deadline was invented. Saturated correlation remains bounded; queued control effects wait for capacity without blocking the owner thread.
+Positive ACK (including already_terminal=true) clears only receipt correlation: it cannot terminalize, release resources or suppress a later authoritative FINISH. A correlated negative ACK for the current ACTIVE Attempt now quarantines and invalidates the session if no reliable result has been accepted. The existing bulk LOST transaction, not the ACK, authorizes FAILED/LOST and resource release. A validated FINISH already retained by the application or TaskManager finalization takes precedence, including FINISH deferred behind an earlier metadata mutation; negative ACK cannot rewrite that result. A historical correlation for a retired Attempt does not invalidate a new current Attempt. Correlation remains available after terminalization for a legitimately late ACK, then is removed on receipt or session destruction. No new ACK lease/deadline was invented. Saturated correlation remains bounded; queued control effects wait for capacity without blocking the owner thread.
 
 Failed or partially sent CANCEL is uncertain delivery and follows LOST. Tests capture a seven-byte partial command followed by close, not a fabricated complete send or CANCELLED result. Logical faults stop applying old input immediately, keep consuming bounded TCP input, wait for durable bulk LOST and only then intentionally close the old socket. Physical EOF/reset naturally precedes that logical cleanup.
 
@@ -126,6 +126,9 @@ All `M9Loopback.*` cases below are in `tests/integration/m9_loopback.py`. They r
 | 24 | idle_reconnect_registration_rejection_backoff_resets_heartbeat_and_credit | repeated rejection/backoff, fresh UUIDs, sequence 1 and no stale running work |
 | 25 | assignment_before_after_commit_crash_has_no_run_and_exact_recovery | actual pre/post-assignment commit crash, no RUN, exact PENDING vs LOST recovery |
 | 26 | cancel_terminal_before_after_commit_crash_does_not_infer_from_synced_files | synced logs, pre/post-terminal COMMIT crash, reservation held until completion, LOST vs CANCELLED recovery |
+| 27 | negative_cancel_ack_with_heartbeats_holds_lost_commit_and_replacement | durable RUNNING; valid negative ACK with continuing heartbeats/no FINISH; immediate quarantine; held LOST retains reservations/socket and blocks replacement until commit |
+| 28 | negative_cancel_ack_after_finish_keeps_barrier_and_durable_natural_result | negative receipt during held log barrier and after durable SUCCEEDED preserves natural exit 0, immutable history and healthy session |
+| 29 | negative_cancel_ack_preserves_finish_deferred_behind_metadata | held STARTING transaction proves an already validated FINISH wins even before TaskManager finalization is installed |
 
 `tests/component/m9_execution_test.cpp` adds these actual Linux-runtime tests through transport value ports (not fake durability):
 
@@ -181,7 +184,7 @@ The following accepted tests also run in the full final suite, not merely source
 | 1 precommit CANCEL/reply? | No; completion-generated facts/effects, M9 1–4/16. |
 | 2 early CANCELLED? | No; accepted state captured ACTIVE; M9 2/9/26. |
 | 3 duplicate/fd-reused mutation? | No stale response; generation/request fences and serialized transitions, M9 1/2/5/6/15. |
-| 4 receipt mistaken for FINISH? | No; distinct map/event, M9 2/7/20. |
+| 4 receipt mistaken for FINISH? | No; distinct map/event, M9 2/7/20/27–29. Independent review additionally found negative receipt could strand ACTIVE work; cleanup now invalidates only if no authoritative result exists. |
 | 5 late cause overwrite? | No; RuntimeProcessId owner, fixed outcome and first cause, M9 8/9/12 plus execution tests. |
 | 6 stale PID signalling? | No Controller kill path; Worker uses owned RuntimeProcessId/pgid, M9 19 and execution identity tests. |
 | 7 missing ACK/START mistaken for timeout/rejection? | No; LOST, M9 11 plus retained negative-ACK tests. |
@@ -213,7 +216,7 @@ ctest --test-dir /home/nhzj121/build/task_scheduler \
   -L m9 --output-on-failure --repeat until-fail:20
 ```
 
-Clean configure/build and full CTest exited 0. Full suite: **463/463 PASS**, **79.45 seconds**, comprising all **430** accepted regressions plus **33** new M9 entries (7 component/core tests and 26 real-TCP integration cases). Inventory review confirmed no disabled entries and exact registration of every M9 case. Repetition exited 0: **33 tests × 20 = 660 successful executions**, **0 failures**, **566.13 seconds**. An independent parse checked every test ID appeared exactly twenty times; `m9-repeat-review.json` records the result. After repetition, `/proc/*/exe` inspection found no residual executable from the build tree; protected-note hashes still matched. Kernel: `6.18.54.1-microsoft-standard-WSL2`, x86_64.
+Initial delivery evidence (the current cleanup results follow below): clean configure/build and full CTest exited 0. Full suite: **463/463 PASS**, **79.45 seconds**, comprising all **430** accepted regressions plus **33** new M9 entries (7 component/core tests and 26 real-TCP integration cases). Inventory review confirmed no disabled entries and exact registration of every M9 case. Repetition exited 0: **33 tests × 20 = 660 successful executions**, **0 failures**, **566.13 seconds**. An independent parse checked every test ID appeared exactly twenty times; `m9-repeat-review.json` records the result. After repetition, `/proc/*/exe` inspection found no residual executable from the build tree; protected-note hashes still matched. Kernel: `6.18.54.1-microsoft-standard-WSL2`, x86_64.
 
 Logs under the build directory: `m9-final-configure.log`, `m9-final-clean.log`, `m9-final-build.log`, `m9-final-ctest.log`, `m9-final-repeat.log`, `m9-final-inventory.json`, `m9-inventory-review.json`, `m9-demo.log`. The independent two-Worker CLI demo exited 0 and exercised human accepted/ACTIVE output, JSON responses, pending/active cancellation, timeout, failed-then-successful retry/history logs, Worker SIGKILL with explicit harness orphan cleanup, Controller SIGKILL and fresh reconnect. `/tmp` was confirmed as `/dev/sdd` ext4 with `findmnt`; `statfs`'s ext2/ext3 family name alone is not used to infer the mount type. Earlier evidence: `m9-baseline-ctest.log`, `m9-dev-full.log`, `m9-resume-tests.log`, `m9-crash-tests.log` (development failures retained rather than represented as final PASS).
 
@@ -222,6 +225,36 @@ The baseline passed 430/430 before changes. Development corrections included an 
 Two accepted M7 assertions were legitimately superseded, while retaining their exact CTest names/labels: Cancel/Retry no longer return UNSUPPORTED; and `worker_id="bad worker"` is valid frozen ASCII, so its old exit was connection refusal rather than invalid configuration. The invalid-config test now uses zero CPU (truly invalid); retry checks next number 206 and old history retention. No disabled, removed, skipped or relabelled regression was used.
 
 No ASan/UBSan/TSan run or hardware power-loss/remount validation is claimed. Process crash and Linux filesystem sync-order evidence is the supported acceptance scope.
+
+### Pre-merge negative CANCEL ACK cleanup (supersedes initial validation above)
+
+Review baseline: `61d6ff9dd98b5fabb32de3bb462d376afd6ed045`. Confirmed defect: Worker `ExecutionManager::cancel()` legitimately sends accepted=false/already_terminal=false for an unknown Attempt. Controller previously cleared correlation and posted receipt-only CancelAckEvent, which has no state transition/deadline. Continuing valid heartbeats could therefore leave RUNNING/ACTIVE forever without FINISH. The new regression failed on that original production code after three seconds of continuing heartbeats (`m9-cleanup-reproduction.log`), proving it did not pass merely through heartbeat expiry.
+
+The only production cleanup is ten added lines in `src/controller/application.cpp`'s WorkerCancelTaskAck branch. All identity/request/session/generation checks remain first. For a current ACTIVE Attempt without accepted FINISH/finalization, a negative ACK marks the peer quarantined immediately and calls the existing TaskManager::invalidate. M6 waits for prior metadata, submits bulk LoseSession, retains reservations and the old socket until commit, and gates any replacement activation. Persistence admission/commit uncertainty still enters existing fail-stop. No direct terminalization, Worker change, CANCEL timeout, new field/state/schema, retry or architecture change is introduced.
+
+Both the application observation flag (set only after LogCoordinator::finish accepts the validated observation) and TaskManager finalization are checked. The former matters while FINISH is queued behind a pending STARTING/RUNNING mutation. Terminal history and valid late positive/negative receipts remain unchanged. Source evidence: `src/controller/application.cpp:389` (ACK identity/policy), `src/worker/execution_manager.cpp:206` (legitimate unknown-Attempt response), `src/controller/task_manager.cpp:299` (receipt-only CancelAckEvent), `:618`/`:636`/`:660` (invalidation, pending-command serialization, commit-only release/replacement) and `LogCoordinator::finish`. Existing `ControllerState.BulkLossDoesNotTouchAnotherSessionAndUnknownCommitBlocksReplacement` and `EssentialSessionLossAdmissionFailureDoesNotReuseOrAckNewSession` also cover unchanged fail-stop/resource ownership. Frozen `PROTOCOL.md` CANCEL ACK, `FAILURE_MODEL.md` session invalidation/natural-result rules and authorization §7 permit this conservative response.
+
+Cleanup files: `src/controller/application.cpp`, `tests/integration/m9_loopback.py`, `tests/helpers/m9_fault_controller.cpp` (one test-only STARTING commit gate), `CMakeLists.txt` (three additional cases), and this report. All prior 463 test entries/labels remain, including duplicate/wrong-identity/generation, partial CANCEL and positive late ACK regressions; no frozen documents or other production modules changed.
+
+Exact cleanup validation commands (stdout/stderr saved under the existing build directory with the `m9-cleanup-final-` prefix):
+
+```bash
+set -euo pipefail
+cmake -S /mnt/e/Deck_all_need/projects/work/task_scheduler \
+  -B /home/nhzj121/build/task_scheduler -DCMAKE_BUILD_TYPE=Debug
+cmake --build /home/nhzj121/build/task_scheduler --target clean
+test -f /home/nhzj121/build/task_scheduler/BUILD_COMMANDS.md
+cmake --build /home/nhzj121/build/task_scheduler -j4
+ctest --test-dir /home/nhzj121/build/task_scheduler --output-on-failure
+ctest --test-dir /home/nhzj121/build/task_scheduler \
+  -R M9Loopback.negative_cancel_ack --output-on-failure --repeat until-fail:20
+ctest --test-dir /home/nhzj121/build/task_scheduler \
+  -L m9 --output-on-failure --repeat until-fail:20
+git diff --check main...HEAD
+git diff --check 61d6ff9dd98b5fabb32de3bb462d376afd6ed045...HEAD
+```
+
+Cleanup clean configure/build exited 0; full CTest **466/466 PASS**, **71.98 seconds**, retaining all 463 prior tests (430 M1–M8 + 33 initial M9) and adding exactly 3 M9 regressions. Current M9 inventory: **36** entries, comprising 7 component/core tests and 29 TCP integration cases; disabled entries: **0** (`m9-cleanup-inventory-review.json`). Extra targeted repetition exited 0: **3 × 20 = 60/60 PASS**, **41.58 seconds**. All-M9 repetition exited 0: **36 × 20 = 720/720 PASS**, **549.84 seconds**. An independent log parse verified exactly twenty successful executions per test in each run. `/proc` inspection found no remaining project processes or zombies (`m9-cleanup-repeat-review.json`). Formal logs: `m9-cleanup-final-configure.log`, `m9-cleanup-final-clean.log`, `m9-cleanup-final-build.log`, `m9-cleanup-final-ctest.log`, `m9-cleanup-final-repeat.log`, `m9-cleanup-final-targeted-repeat.log`. Protected files retain the hashes in A; no sanitizer or physical power-loss validation is claimed.
 
 ## K. Deviations, limits and M10 boundary
 
@@ -233,7 +266,7 @@ Comprehensive sanitizer/CI packaging, systemd/deployment, benchmarking and any M
 
 ## L. Gate
 
-**PASS — M9 implementation acceptance.** All mandatory M9-A–D criteria and the applicable frozen cluster/fault matrix have executable evidence above; clean GCC build, 463/463 full tests and 660/660 repeated M9 executions passed. No unresolved core semantic inconsistency remains. Independent source review is still required before merge. M10 has not started.
+**M9 cleanup: PASS — awaiting final independent Milestone 9 review.** The initial implementation acceptance was followed by independent review requiring the correction above; it is now reproduced, fixed and regression-tested. Clean strict GCC build, 466/466 full tests, 720/720 all-M9 repeated executions and 60/60 extra targeted executions passed. No frozen protocol/state/architecture change or unresolved consistency issue was identified in this cleanup. Final independent review is still required before merge. Main is unchanged; M10 has not started.
 
 Delivery review commands:
 
