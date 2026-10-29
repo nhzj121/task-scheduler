@@ -100,6 +100,12 @@ void TaskManager::emit(EffectKind kind, const Entry* entry, std::optional<Client
     if (entry) {
         e.task_id = domain::TaskId::parse(entry->row.spec.task_id).value();
         e.task_version = entry->row.state_version;
+        e.cancel_requested_at = entry->row.cancel_requested_at;
+        if (kind == EffectKind::RetryAccepted) {
+            std::uint32_t maximum = 0;
+            for (const auto& old : entry->history) maximum = std::max(maximum, old.second.attempt_no);
+            e.next_attempt_no = maximum + 1;
+        }
         if (entry->row.latest_attempt_id) {
             e.attempt_id = domain::AttemptId::parse(*entry->row.latest_attempt_id).value();
             e.attempt_version = entry->history.at(*e.attempt_id).state_version;
@@ -254,6 +260,8 @@ Decision TaskManager::process(Entry& e, const TaskEvent& event) {
         using T = std::decay_t<decltype(ev)>;
         if constexpr (std::is_same_v<T, RetryEvent>) {
             if (e.row.state != TS::FAILED) return Decision::Rejected;
+            for (const auto& old : e.history)
+                if (old.second.attempt_no == UINT32_MAX) return Decision::Rejected;
             return issue(e, storage::Retry{tv, wall_.to_string()}, ev.client);
         } else if constexpr (std::is_same_v<T, CancelEvent>) {
             if (e.row.state == TS::PENDING) return issue(e, storage::CancelPending{tv, wall_.to_string()}, ev.client);

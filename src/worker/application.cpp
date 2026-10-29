@@ -1,6 +1,7 @@
 #include "ts/worker/application.h"
 
 #include <chrono>
+#include <algorithm>
 #include <sys/epoll.h>
 #include <pthread.h>
 #include <stdexcept>
@@ -39,8 +40,11 @@ struct Application::Impl {
     std::optional<io::RegistrationToken> signal_token, timer_token;
     sigset_t previous_mask{}; bool mask_owned{false};
     bool registered{false}, stopping{false}, stop_requested{false}, fatal{false}, tick_due{false};
+    bool cleaning{false}, cleanup_started{false}, connecting{false};
+    std::uint64_t backoff_ms{0};
     std::uint64_t heartbeat_ms{3000}, heartbeat_sequence{0}, grace_ms{1000};
     Clock::time_point next_heartbeat{}, connect_deadline{Clock::now() + std::chrono::seconds(5)}, stop_deadline{};
+    Clock::time_point retry_at{};
     Impl(domain::WorkerConfig c, ApplicationOptions o) : config(std::move(c)), options(std::move(o)) {}
     ~Impl() {
         transport.reset();
@@ -56,20 +60,41 @@ struct Application::Impl {
         if (!fatal) spdlog::error("Worker stopping: {}", why);
         fatal = true; stop_requested = true;
     }
+    void lost(const std::string& why) {
+        if (stopping || cleaning || stop_requested) return;
+        spdlog::warn("Worker session lost: {}; cleaning before reconnect", why);
+        registered = false; connecting = false; cleaning = true;
+        // May be reached synchronously by a send failure. Stop pipe transmission
+        // immediately; all following output belongs only to incomplete cleanup.
+        if (execution && !cleanup_started) {
+            cleanup_started = true;
+            const auto result = execution->stop(); if (!result) fail(result.error().message);
+        }
+    }
     common::Result<void> send(net::Outbound frame) {
-        if (!connection || stop_requested) return common::Result<void>::failure("Worker session unavailable");
+        if (!connection || stop_requested || cleaning) return common::Result<void>::failure("Worker session unavailable");
         return transport->send(*connection, std::move(frame));
     }
     void initialize() {
+        if (!config.reconnect.initial_backoff_ms || config.reconnect.initial_backoff_ms > config.reconnect.max_backoff_ms ||
+            config.reconnect.max_backoff_ms > static_cast<std::uint64_t>(INT64_MAX) / 1000000)
+            throw std::invalid_argument("reconnect clock range");
+        backoff_ms = config.reconnect.initial_backoff_ms;
         loop = checked(io::EventLoop::create());
         transport = checked(net::ConnectionManager::create(*loop, {
             [this](auto id) {
                 connection = id;
                 checked(send({wire(protocol::RegisterWorker{config.worker_id, session, config.capacity,
-                    config.max_concurrent_tasks, "task-scheduler-m7"}, 1)}));
+                    config.max_concurrent_tasks, "task-scheduler-m9"}, 1)}));
             },
             [this](auto id, auto data) { return bytes(id, data); },
-            [this](auto) { connection.reset(); if (!stopping) fail("Controller connection closed; no M7 reconnect"); }
+            [this](auto event) {
+                if (connection && !(*connection == event.id)) return;
+                connection.reset();
+                if (event.cause == net::CloseCause::InputOverflow || event.cause == net::CloseCause::OutputOverflow ||
+                    event.cause == net::CloseCause::CallbackError) fail("transport buffer/callback invariant failure");
+                else lost("Controller connection closed");
+            }
         }, {}, std::move(options.socket_io)));
         // MUST precede SIGINT/SIGTERM blocking. M4's restored child mask must
         // allow normal group termination. No fork path is implemented here.
@@ -89,9 +114,20 @@ struct Application::Impl {
             checked(timer->arm_once(std::chrono::milliseconds(10)));
         }));
         checked(timer->arm_once(std::chrono::milliseconds(10)));
-        checked(transport->connect({config.controller.address, config.controller.port}));
+        connect();
+    }
+    void connect() {
+        connecting = true; connect_deadline = Clock::now() + std::chrono::seconds(5);
+        const auto result = transport->connect({config.controller.address, config.controller.port});
+        if (!result) {
+            // Only a connect syscall/network refusal is an expected unavailable peer.
+            // fd/epoll/callback errors remain fatal, never generic retry success.
+            if (result.error().message.rfind("connect:", 0) == 0) lost(result.error().message);
+            else fail(result.error().message);
+        } else if (!cleaning && !stop_requested) connection = result.value();
     }
     std::size_t bytes(net::ConnectionId id, std::string_view data) {
+        if (!connection || !(*connection == id) || cleaning || stop_requested) return data.size();
         const auto fed = parser.feed(data, [this](protocol::Frame&& frame) {
             auto decoded = protocol::decode_message(frame, protocol::Direction::ControllerToWorker);
             if (!decoded) { fail(decoded.error().message); return false; }
@@ -99,7 +135,7 @@ struct Application::Impl {
                 const auto* ack = std::get_if<protocol::RegisterAck>(&decoded.value());
                 if (!ack || frame.header.request_id != 1) { fail("expected correlated REGISTER_ACK first"); return false; }
                 const auto* accepted = std::get_if<protocol::RegistrationAccepted>(&ack->result);
-                if (!accepted) { fail("registration rejected: " + std::get<protocol::RegistrationRejected>(ack->result).message); return false; }
+                if (!accepted) { lost("registration rejected: " + std::get<protocol::RegistrationRejected>(ack->result).message); return false; }
                 if (accepted->heartbeat_interval_ms > static_cast<std::uint64_t>(INT64_MAX) / 1000000) {
                     fail("heartbeat exceeds clock range"); return false;
                 }
@@ -107,18 +143,22 @@ struct Application::Impl {
                 if (!activated) { fail(activated.error().message); return false; }
                 heartbeat_ms = accepted->heartbeat_interval_ms; grace_ms = accepted->termination_grace_ms;
                 registered = true; next_heartbeat = Clock::now();
+                backoff_ms = config.reconnect.initial_backoff_ms; connecting = false;
                 spdlog::info("REGISTERED worker={} session={}", config.worker_id.value(), session.value());
             } else if (const auto* task = std::get_if<protocol::RunTask>(&decoded.value())) {
                 const auto result = execution->accept(*task, frame.header.request_id);
-                if (!result) { fail(result.error().message); return false; }
+                if (!result) { if (!cleaning) fail(result.error().message); return false; }
             } else if (const auto* grant = std::get_if<protocol::LogWindowUpdate>(&decoded.value())) {
                 const auto result = execution->grant(*grant);
                 if (!result) { fail(result.error().message); return false; }
-            } else { fail("unsupported or out-of-phase Controller command in M7"); return false; }
-            return !stop_requested;
+            } else if (const auto* cancel = std::get_if<protocol::WorkerCancelTask>(&decoded.value())) {
+                const auto result = execution->cancel(*cancel, frame.header.request_id);
+                if (!result) { if (!cleaning) fail(result.error().message); return false; }
+            } else { fail("unsupported or out-of-phase Controller command"); return false; }
+            return !stop_requested && !cleaning;
         });
         if (!fed) {
-            if (!stop_requested) fail(fed.error().message);
+            if (!stop_requested && !cleaning) fail(fed.error().message);
             checked(transport->close(id));
         }
         return data.size();
@@ -128,12 +168,16 @@ struct Application::Impl {
             try {
                 const auto polled = loop->poll_once(100);
                 if (!polled) fail(polled.error().message);
-                if (!registered && !stopping && Clock::now() >= connect_deadline) fail("registration deadline");
+                if (connecting && !cleaning && !stopping && Clock::now() >= connect_deadline) lost("registration deadline");
+                if ((cleaning || stop_requested) && !cleanup_started) {
+                    cleanup_started = true;
+                    const auto result = execution->stop(); if (!result) fail(result.error().message);
+                    if (connection) checked(transport->close(*connection));
+                }
+                if ((cleaning || stop_requested) && connection) checked(transport->close(*connection));
                 if (stop_requested && !stopping) {
                     stopping = true;
                     stop_deadline = Clock::now() + std::chrono::milliseconds(grace_ms) + std::chrono::seconds(5);
-                    const auto result = execution->stop(); if (!result) fail(result.error().message);
-                    if (connection) checked(transport->close(*connection));
                 }
                 if (tick_due) {
                     tick_due = false; const auto result = execution->tick();
@@ -142,11 +186,23 @@ struct Application::Impl {
                 if (registered && !stop_requested && Clock::now() >= next_heartbeat) {
                     if (heartbeat_sequence == UINT64_MAX) fail("heartbeat sequence exhausted");
                     else {
-                        checked(send({wire(protocol::Heartbeat{config.worker_id, session, ++heartbeat_sequence, execution->running()}, 0)}));
+                        const auto sent = send({wire(protocol::Heartbeat{config.worker_id, session, ++heartbeat_sequence, execution->running()}, 0)});
+                        if (!sent && !cleaning) fail(sent.error().message);
                         next_heartbeat = Clock::now() + std::chrono::milliseconds(heartbeat_ms);
                     }
                 }
                 if (stopping && execution->running().empty()) break;
+                if (!stopping && cleaning && cleanup_started && execution->running().empty()) {
+                    // All old per-Attempt owners are gone before changing session.
+                    // Keep the Worker-wide SIGCHLD owner/mask nesting intact.
+                    session = domain::SessionId::generate(); checked(execution->reset_session(session));
+                    parser = protocol::FrameParser(protocol::Direction::ControllerToWorker);
+                    heartbeat_sequence = 0; cleaning = false; cleanup_started = false;
+                    retry_at = Clock::now() + std::chrono::milliseconds(backoff_ms);
+                    backoff_ms = backoff_ms > config.reconnect.max_backoff_ms / 2 ? config.reconnect.max_backoff_ms :
+                        std::min(backoff_ms * 2, config.reconnect.max_backoff_ms);
+                }
+                if (!stopping && !stop_requested && !cleaning && !connecting && !registered && Clock::now() >= retry_at) connect();
                 if (stopping && Clock::now() >= stop_deadline) {
                     // Never destroy a live ProcessRuntime (its ownership contract
                     // forbids abandonment). Cleanup continues, with explicit error.

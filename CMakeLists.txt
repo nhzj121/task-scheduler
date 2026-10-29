@@ -156,6 +156,47 @@ if(BUILD_TESTING)
   target_link_libraries(ts_m7_fault_controller PRIVATE ts_controller)
   ts_enable_project_warnings(ts_m7_fault_controller)
   find_program(TS_PYTHON_EXECUTABLE NAMES python3 REQUIRED)
+  add_executable(ts_milestone9_tests tests/component/m9_execution_test.cpp tests/component/m9_state_test.cpp)
+  target_link_libraries(ts_milestone9_tests PRIVATE ts_worker ts_controller_state GTest::gtest_main)
+  target_compile_definitions(ts_milestone9_tests PRIVATE TS_RUNTIME_HELPER_PATH="$<TARGET_FILE:ts_runtime_test_helper>")
+  add_dependencies(ts_milestone9_tests ts_runtime_test_helper)
+  ts_enable_project_warnings(ts_milestone9_tests)
+  gtest_discover_tests(ts_milestone9_tests PROPERTIES LABELS "m9;component" TIMEOUT 15)
+  add_executable(ts_m9_fault_controller tests/helpers/m9_fault_controller.cpp)
+  target_link_libraries(ts_m9_fault_controller PRIVATE ts_controller)
+  ts_enable_project_warnings(ts_m9_fault_controller)
+  foreach(m9_case IN ITEMS
+      pending_cancel_commit_gate_idempotence_and_missing_conflicts
+      active_cancel_commit_gate_receipt_not_terminal_and_duplicate
+      cancel_unknown_failed_commit_never_escapes_on_wire
+      no_dispatch_assigned_proven_empty_and_possible_bytes_cancel_intent
+      retry_commit_preserves_history_logs_and_unique_attempt_number
+      client_disconnect_and_reused_request_cannot_steal_cancel_retry_response
+      bad_cancel_ack_correlations_and_duplicates_invalidate_not_terminalize
+      real_cancel_timeout_and_noncooperative_group_cleanup
+      cancel_during_held_final_barrier_keeps_natural_outcome_and_reservation
+      controller_crash_running_cleanup_before_fresh_registration_and_recovery
+      deadlines_and_lost_commit_hold_reservations_and_replacement_ack
+      zero_credit_cancel_duplicate_timeout_first_and_natural_first_wire
+      running_disconnect_churn_cleans_groups_before_register_and_bounds_fds
+      retry_can_succeed_on_another_worker_preserving_exact_old_log_history
+      disconnected_retry_and_failed_unknown_retry_commit_never_auto_schedule
+      crash_before_and_after_cancel_intent_commit_recovers_lost_never_replays
+      killed_worker_lost_has_no_automatic_retry_and_new_session_is_empty
+      real_multiworker_projected_choice_and_pending_registration_trigger
+      launch_setup_cancel_race_and_stale_worker_command_are_fenced
+      partial_cancel_send_is_lost_not_cancelled_and_late_valid_ack_is_receipt
+      stalled_log_path_cancel_control_two_workers_and_exact_cancel_tail
+      protocol_invalidation_keeps_socket_until_lost_commit_and_fences_late_packets
+      cancelled_log_namespace_and_file_sync_failures_never_claim_complete
+      idle_reconnect_registration_rejection_backoff_resets_heartbeat_and_credit
+      assignment_before_after_commit_crash_has_no_run_and_exact_recovery
+      cancel_terminal_before_after_commit_crash_does_not_infer_from_synced_files)
+    add_test(NAME M9Loopback.${m9_case}
+      COMMAND ${TS_PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/integration/m9_loopback.py
+      --bin $<TARGET_FILE_DIR:controller> --case test_${m9_case})
+    set_tests_properties(M9Loopback.${m9_case} PROPERTIES LABELS "m9;integration" TIMEOUT 90)
+  endforeach()
   add_executable(ts_log_workload tests/helpers/log_workload.cpp)
   ts_enable_project_warnings(ts_log_workload)
   add_executable(ts_m8_fault_controller tests/helpers/m8_fault_controller.cpp)

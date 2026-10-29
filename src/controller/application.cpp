@@ -53,15 +53,18 @@ struct Application::Impl final : PersistencePort, EffectPort {
         bool acked{false}, started{false}, finished{false};
     };
     struct Peer {
+        struct CancelRequest { domain::TaskId task; domain::AttemptId attempt; SessionKey session; };
         ConnectionIdentity identity;
         protocol::FrameParser parser;
-        bool closing{false}, close_after_flush{false}, registered{false};
+        bool closing{false}, close_after_flush{false}, registered{false}, quarantined{false};
         std::set<std::uint64_t> requests;
+        std::map<std::uint64_t, bool> mutations;
         std::optional<Registration> registration;
         std::optional<SessionKey> session;
         std::optional<std::uint64_t> registration_request;
         std::uint64_t next_request{1};
         std::map<std::uint64_t, domain::AttemptId> runs;
+        std::map<std::uint64_t, CancelRequest> cancels;
         std::map<domain::AttemptId, Observation> observations;
         Peer(ConnectionIdentity token, protocol::Direction direction) : identity(token), parser(direction) {}
     };
@@ -212,7 +215,9 @@ struct Application::Impl final : PersistencePort, EffectPort {
         // A lost client cannot roll back a durable Task or invalidate a Worker.
         if (!sent) spdlog::warn("client response transport closed: {}", sent.error().message);
         const auto it = client_peers.find(client.connection.value);
-        if (it != client_peers.end() && it->second->identity == client.connection) it->second->requests.erase(client.request_id);
+        if (it != client_peers.end() && it->second->identity == client.connection) {
+            it->second->requests.erase(client.request_id); it->second->mutations.erase(client.request_id);
+        }
     }
     void error(ClientRequest client, protocol::ErrorCode code, const std::string& message, bool retryable = false) {
         reply(client, protocol::ErrorResponse{code, message, retryable, nlohmann::json::object()});
@@ -221,7 +226,9 @@ struct Application::Impl final : PersistencePort, EffectPort {
         auto& peers = worker ? worker_peers : client_peers; const auto it = peers.find(id.value);
         if (it == peers.end() || it->second->closing) return bytes.size();
         auto& peer = *it->second;
+        if (worker && peer.quarantined) return bytes.size();
         const auto fed = peer.parser.feed(bytes, [&](protocol::Frame&& frame) {
+            if (worker && peer.quarantined) return true;
             auto decoded = protocol::decode_message(frame, worker ? protocol::Direction::WorkerToController : protocol::Direction::ClientToController);
             if (!decoded) {
                 if (!worker && decoded.error().kind == protocol::ErrorKind::Schema && frame.header.request_id &&
@@ -237,7 +244,13 @@ struct Application::Impl final : PersistencePort, EffectPort {
             client_message({peer.identity, frame.header.request_id}, std::move(decoded).value()); return true;
         });
         if (!fed || peer.close_after_flush) {
-            if (!fed) checked((worker ? workers : clients)->close(id));
+            if (!fed && worker && peer.session) {
+                // Logical protocol loss fences all future input immediately, but
+                // does not intentionally close the socket before bulk LOST commits.
+                // Continue draining bounded TCP input; no old packet is applied.
+                peer.quarantined = true;
+                if (manager->invalidate(*peer.session) == Decision::Degraded) fail("protocol-loss persistence unavailable");
+            } else if (!fed) checked((worker ? workers : clients)->close(id));
         }
         return bytes.size();
     }
@@ -273,6 +286,35 @@ struct Application::Impl final : PersistencePort, EffectPort {
                 if (result == Decision::Backpressure) error(client, protocol::ErrorCode::TemporarilyUnavailable, "metadata admission pressure", true);
                 else if (result == Decision::Rejected) error(client, protocol::ErrorCode::InvalidArgument, "Task metadata exceeds accepted storage/domain ranges");
                 else if (result != Decision::Accepted) fail("submit persistence unavailable");
+            } else if constexpr (std::is_same_v<T, protocol::CancelTask> || std::is_same_v<T, protocol::RetryTask>) {
+                constexpr bool retry = std::is_same_v<T, protocol::RetryTask>;
+                const auto row = manager->task(request.task_id);
+                if (!row) { error(client, protocol::ErrorCode::NotFound, "Task not found"); return; }
+                if (!retry && row->state == domain::TaskState::CANCELLED) {
+                    reply(client, protocol::CancelTaskResponse{request.task_id, protocol::CancelStatus::AlreadyCancelled,
+                        domain::TaskState::CANCELLED, row->cancel_requested_at ?
+                        std::optional<common::Timestamp>{common::Timestamp::parse(*row->cancel_requested_at).value()} : std::nullopt}); return;
+                }
+                constexpr std::size_t charge = 8192;
+                if (retry && (charge > options.limits.restore_bytes || restore_owned_bytes > options.limits.restore_bytes - charge)) {
+                    error(client, protocol::ErrorCode::TemporarilyUnavailable, "retained history capacity", true); return;
+                }
+                // Proof comes from a current adapter-owned effect, before transport
+                // admission, never from a transient empty socket output queue.
+                if (!retry) for (const auto& effect : effects) {
+                    if (effect.kind != EffectKind::RunEligible || !effect.task_id || !(*effect.task_id == request.task_id) ||
+                        !effect.session || !effect.attempt_id || !manager->effect_is_current(effect)) continue;
+                    const auto worker = worker_peers.find(effect.session->connection.value);
+                    if (worker != worker_peers.end() && worker->second->identity == effect.session->connection &&
+                        !worker->second->observations.count(*effect.attempt_id))
+                        static_cast<void>(manager->record_dispatch(effect, DispatchFact::NoBytesQueued));
+                }
+                client_peers.at(client.connection.value)->mutations.emplace(client.request_id, retry);
+                const auto result = manager->receive(request.task_id, retry ? TaskEvent{RetryEvent{client}} : TaskEvent{CancelEvent{client}});
+                if (result == Decision::Accepted || result == Decision::Deferred) { if (retry) restore_owned_bytes += charge; }
+                else if (result == Decision::Backpressure) error(client, protocol::ErrorCode::TemporarilyUnavailable, "mutation admission pressure", true);
+                else if (result == Decision::Rejected) error(client, protocol::ErrorCode::Conflict, "Task transition not permitted");
+                else fail("client mutation persistence unavailable");
             } else if constexpr (std::is_same_v<T, protocol::GetTask>) {
                 if (!post_query({QueryKind::GetTask, {{}, storage::ReadTask{request.task_id.value()}, 512}, client, {}, {}, false}))
                     error(client, protocol::ErrorCode::TemporarilyUnavailable, "query capacity", true);
@@ -337,8 +379,27 @@ struct Application::Impl final : PersistencePort, EffectPort {
             if (record && record->current && record->current->key.connection == peer.identity) peer.session = record->current->key;
             return true;
         }
-        if (!peer.registered || !peer.session || !manager->workers().valid(*peer.session, monotonic_ms())) return false;
+        if (!peer.registered || !peer.session) return false;
+        if (!manager->workers().valid(*peer.session, monotonic_ms())) {
+            peer.quarantined = true;
+            if (manager->invalidate(*peer.session) == Decision::Degraded) fail("expired-session persistence unavailable");
+            return !fatal;
+        }
         const auto& key = *peer.session;
+        if (const auto* ack = std::get_if<protocol::WorkerCancelTaskAck>(&message)) {
+            const auto pending = peer.cancels.find(header.request_id);
+            if (!(ack->worker_id == key.worker_id) || !(ack->session_id == key.session_id) || pending == peer.cancels.end() ||
+                !(pending->second.session == key) || !(pending->second.attempt == ack->attempt_id)) return false;
+            const auto task = pending->second.task;
+            peer.cancels.erase(pending);
+            const auto row = manager->task(task);
+            if (row && row->state == domain::TaskState::ACTIVE) {
+                const auto result = manager->receive(task, CancelAckEvent{ack->attempt_id, key});
+                if (result == Decision::Degraded) fail("cancel receipt unavailable");
+                else if (result != Decision::Accepted && result != Decision::Deferred && result != Decision::Stale) return false;
+            }
+            return !fatal;
+        }
         bool valid = true;
         std::visit([&](const auto& event) {
             using T = std::decay_t<decltype(event)>;
@@ -600,8 +661,26 @@ struct Application::Impl final : PersistencePort, EffectPort {
                 if (!task) { fail("durable submit row missing"); break; }
                 reply(*effect.client, protocol::SubmitTaskResponse{*effect.task_id, domain::TaskState::PENDING,
                     common::Timestamp::parse(task->created_at).value()});
+            } else if (effect.kind == EffectKind::CancelAccepted || effect.kind == EffectKind::CancelCompleted) {
+                if (!effect.client || !effect.task_id) { fail("cancel response fact missing"); break; }
+                reply(*effect.client, protocol::CancelTaskResponse{*effect.task_id,
+                    effect.kind == EffectKind::CancelAccepted ? protocol::CancelStatus::Accepted : protocol::CancelStatus::Completed,
+                    effect.kind == EffectKind::CancelAccepted ? domain::TaskState::ACTIVE : domain::TaskState::CANCELLED,
+                    effect.cancel_requested_at ? std::optional<common::Timestamp>{common::Timestamp::parse(*effect.cancel_requested_at).value()} : std::nullopt});
+            } else if (effect.kind == EffectKind::RetryAccepted) {
+                if (!effect.client || !effect.task_id || !effect.next_attempt_no) { fail("retry response fact missing"); break; }
+                reply(*effect.client, protocol::RetryTaskResponse{*effect.task_id, domain::TaskState::PENDING,
+                    domain::AttemptNumber::create(*effect.next_attempt_no).value()});
             } else if (effect.kind == EffectKind::Rejected && effect.client) {
-                error(*effect.client, protocol::ErrorCode::Conflict, "durable transition rejected");
+                const auto p = client_peers.find(effect.client->connection.value);
+                const auto row = effect.task_id ? manager->task(*effect.task_id) : std::nullopt;
+                if (p != client_peers.end() && p->second->identity == effect.client->connection &&
+                    p->second->mutations.count(effect.client->request_id) && !p->second->mutations.at(effect.client->request_id) &&
+                    row && row->state == domain::TaskState::CANCELLED)
+                    reply(*effect.client, protocol::CancelTaskResponse{*effect.task_id, protocol::CancelStatus::AlreadyCancelled,
+                        domain::TaskState::CANCELLED, row->cancel_requested_at ?
+                        std::optional<common::Timestamp>{common::Timestamp::parse(*row->cancel_requested_at).value()} : std::nullopt});
+                else error(*effect.client, protocol::ErrorCode::Conflict, "durable transition rejected");
             } else if (effect.kind == EffectKind::RegistrationAccepted && effect.session) {
                 const auto& key = *effect.session; const auto it = worker_peers.find(key.connection.value);
                 if (it == worker_peers.end() || it->second->closing || !(it->second->identity == key.connection)) {
@@ -629,7 +708,10 @@ struct Application::Impl final : PersistencePort, EffectPort {
                 }
                 auto& peer = *it->second;
                 if (!peer.registered) { fail("RUN precedes registration ACK queueing"); break; }
-                if (peer.runs.size() >= options.limits.requests_per_connection) { effects.push_back(std::move(effect)); continue; }
+                if (peer.runs.size() >= options.limits.requests_per_connection) {
+                    if (manager->record_dispatch(effect, DispatchFact::NoBytesQueued) != Decision::Accepted) continue;
+                    effects.push_back(std::move(effect)); continue;
+                }
                 if (peer.observations.size() >= 1024 || peer.next_request == UINT64_MAX) {
                     const auto result = manager->invalidate(*effect.session); if (result == Decision::Degraded) fail("dispatch metadata capacity cleanup unavailable");
                     continue;
@@ -665,7 +747,25 @@ struct Application::Impl final : PersistencePort, EffectPort {
                 if (it != worker_peers.end() && it->second->identity == effect.session->connection)
                     it->second->observations.erase(*effect.attempt_id);
             } else if (effect.kind == EffectKind::CancelEligible) {
-                fail("M7 must not offer an unimplemented cancellation transport");
+                if (stopping || stop_requested || !effect.session || !effect.task_id || !effect.attempt_id ||
+                    !manager->effect_is_current(effect)) continue;
+                const auto found = worker_peers.find(effect.session->connection.value);
+                if (found == worker_peers.end() || found->second->closing || !found->second->registered ||
+                    !(found->second->identity == effect.session->connection)) continue;
+                auto& peer = *found->second;
+                if (std::any_of(peer.cancels.begin(), peer.cancels.end(), [&](const auto& c) { return c.second.attempt == *effect.attempt_id; })) continue;
+                if (peer.cancels.size() >= options.limits.requests_per_connection) { effects.push_back(std::move(effect)); continue; }
+                if (peer.next_request == UINT64_MAX) {
+                    if (manager->invalidate(*effect.session) == Decision::Degraded) fail("cancel request space exhausted");
+                    continue;
+                }
+                const auto request = peer.next_request++;
+                const auto encoded = wire(protocol::WorkerCancelTask{effect.session->worker_id, effect.session->session_id,
+                    *effect.task_id, *effect.attempt_id, config.termination_grace_ms}, request, protocol::Direction::ControllerToWorker);
+                if (!manager->effect_is_current(effect)) continue;
+                peer.cancels.emplace(request, Peer::CancelRequest{*effect.task_id, *effect.attempt_id, *effect.session});
+                const auto sent = workers->send({effect.session->connection.value}, {encoded});
+                if (!sent) spdlog::warn("CANCEL transport closed: {}", sent.error().message);
             }
         }
     }

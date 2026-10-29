@@ -9,7 +9,8 @@ void help() {
         "  submit [--cpu N] [--memory MB] [--timeout SEC] [--cwd DIR] [--env KEY=VALUE] [--] EXEC [ARGS...]\n"
         "  get|status TASK_ID\n  list\n  workers\n"
         "  logs TASK_ID [--attempt N] [--stdout|--stderr|--both] [--limit-bytes N]\n"
-        "cancel/retry remain unsupported. JSON list/logs output is one response object per page (NDJSON).\n";
+        "  cancel TASK_ID\n  retry TASK_ID\n"
+        "JSON list/logs output is one response object per page (NDJSON).\n";
 }
 void display(const ts::protocol::Message& response, bool json) {
     using namespace ts;
@@ -31,7 +32,13 @@ void display(const ts::protocol::Message& response, bool json) {
         } else if constexpr (std::is_same_v<T, protocol::ListWorkersResponse>) {
             for (const auto& w : value.workers) std::cout << w.worker_id.value() << ' ' << domain::to_string(w.state)
                 << " reserved_cpu=" << w.reserved.cpu_slots() << " attempts=" << w.running_attempts << '\n';
-        } else if constexpr (std::is_same_v<T, protocol::ErrorResponse>) std::cerr << "server error: " << value.message << '\n';
+        } else if constexpr (std::is_same_v<T, protocol::CancelTaskResponse>) {
+            const char* status = value.status == protocol::CancelStatus::Accepted ? "accepted" :
+                value.status == protocol::CancelStatus::Completed ? "completed" : "already_cancelled";
+            std::cout << value.task_id.value() << ' ' << status << ' ' << domain::to_string(value.task_state) << '\n';
+        } else if constexpr (std::is_same_v<T, protocol::RetryTaskResponse>)
+            std::cout << value.task_id.value() << ' ' << domain::to_string(value.state) << " next_attempt=" << value.next_attempt_no.value() << '\n';
+        else if constexpr (std::is_same_v<T, protocol::ErrorResponse>) std::cerr << "server error: " << value.message << '\n';
         else throw std::runtime_error("unexpected taskctl response");
     }, response);
 }

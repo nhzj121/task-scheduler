@@ -69,6 +69,7 @@ struct ProcessObservation {
     pid_t leader_pid;
     bool exec_resolved, exec_succeeded, stdout_complete, stderr_complete;
     std::optional<LaunchFailure> launch_failure;
+    bool outcome_fixed{false};
 };
 
 class ProcessRuntime final {
@@ -84,7 +85,8 @@ public:
 
     [[nodiscard]] common::Result<RuntimeProcessId> launch(
         const LaunchOptions& options);
-    [[nodiscard]] common::Result<bool> cancel(RuntimeProcessId process_id);
+    [[nodiscard]] common::Result<bool> cancel(RuntimeProcessId process_id,
+        std::optional<std::chrono::nanoseconds> grace = std::nullopt);
     // Errors do not release owned children. Continue polling to finish explicit cleanup
     // before destruction; failed fd registrations are serviced nonblockingly here.
     [[nodiscard]] common::Result<std::size_t> poll_once(int timeout_ms);
