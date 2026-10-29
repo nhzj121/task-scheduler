@@ -17,6 +17,7 @@ public:
         domain::WorkerConfig config, domain::SessionId session, Send send, Room room);
     ~ExecutionManager();
     [[nodiscard]] common::Result<void> activate(const protocol::RegistrationAccepted& ack);
+    [[nodiscard]] common::Result<void> grant(const protocol::LogWindowUpdate& window);
     [[nodiscard]] common::Result<void> accept(const protocol::RunTask& task, std::uint64_t request);
     [[nodiscard]] common::Result<void> tick(); // bounded, nonblocking M4 poll
     [[nodiscard]] common::Result<void> stop(); // cancel owned groups; keep ticking until empty

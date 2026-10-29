@@ -22,6 +22,8 @@ public:
     // Consumer is synchronous; it must not retain references into a page.
     [[nodiscard]] common::Result<std::size_t> list(
         const std::function<void(const protocol::ListTasksResponse&)>& consume, std::uint64_t page_size = 100);
+    [[nodiscard]] common::Result<std::uint64_t> logs(protocol::GetLogs request,
+        const std::function<void(const protocol::GetLogsResponse&)>& consume);
 private:
     struct Impl;
     explicit Client(std::unique_ptr<Impl> impl);

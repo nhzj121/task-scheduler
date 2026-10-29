@@ -8,7 +8,8 @@ void help() {
     std::cout << "taskctl [--host ADDRESS] [--port PORT] [--json] COMMAND\n"
         "  submit [--cpu N] [--memory MB] [--timeout SEC] [--cwd DIR] [--env KEY=VALUE] [--] EXEC [ARGS...]\n"
         "  get|status TASK_ID\n  list\n  workers\n"
-        "M7: logs/cancel/retry are unsupported. JSON list output is one response object per page (NDJSON).\n";
+        "  logs TASK_ID [--attempt N] [--stdout|--stderr|--both] [--limit-bytes N]\n"
+        "cancel/retry remain unsupported. JSON list/logs output is one response object per page (NDJSON).\n";
 }
 void display(const ts::protocol::Message& response, bool json) {
     using namespace ts;
@@ -50,6 +51,7 @@ int main(int argc, char** argv) {
         if (i == argc) throw std::invalid_argument("missing command; use --help");
         const std::string command = argv[i++];
         std::optional<ts::protocol::Message> request;
+        bool both = false;
         if (command == "submit") {
             std::uint32_t cpu = 1; std::uint64_t memory = 0; ts::protocol::Milliseconds timeout;
             std::optional<std::string> cwd; ts::protocol::Environment env;
@@ -69,18 +71,55 @@ int main(int argc, char** argv) {
             for (; i < argc; ++i) args.emplace_back(argv[i]);
             auto resources = ts::domain::ResourceRequest::create(cpu, memory); if (!resources) throw std::invalid_argument(resources.error().message);
             request = ts::protocol::SubmitTask{std::move(executable), std::move(args), std::move(env), std::move(cwd), resources.value(), timeout};
-        } else if (command == "get" || command == "status" || command == "logs" || command == "cancel" || command == "retry") {
+        } else if (command == "logs") {
+            if (i == argc) throw std::invalid_argument("logs requires a Task UUID");
+            const auto id = ts::domain::TaskId::parse(argv[i++]); if (!id) throw std::invalid_argument(id.error().message);
+            ts::protocol::GetLogs log{id.value(), {}, ts::protocol::Stream::Stdout, 0, 262144, {}};
+            bool stream_selected = false;
+            for (; i < argc; ++i) {
+                const std::string option = argv[i];
+                if (option == "--attempt") {
+                    const auto n = ts::domain::AttemptNumber::create(static_cast<std::uint32_t>(ts::apps::unsigned_value(value(), UINT32_MAX)));
+                    if (!n) throw std::invalid_argument(n.error().message);
+                    log.attempt_no = n.value();
+                } else if (option == "--limit-bytes") {
+                    log.limit_bytes = ts::apps::unsigned_value(value()); if (!log.limit_bytes) throw std::invalid_argument("log page size zero");
+                } else if (option == "--stdout" || option == "--stderr" || option == "--both") {
+                    if (stream_selected) throw std::invalid_argument("choose one stream option");
+                    stream_selected = true; both = option == "--both";
+                    log.stream = option == "--stderr" ? ts::protocol::Stream::Stderr : ts::protocol::Stream::Stdout;
+                } else throw std::invalid_argument("unknown logs option");
+            }
+            request = log;
+        } else if (command == "get" || command == "status" || command == "cancel" || command == "retry") {
             if (argc - i != 1) throw std::invalid_argument("command requires one Task UUID");
             const auto id = ts::domain::TaskId::parse(argv[i++]); if (!id) throw std::invalid_argument(id.error().message);
             if (command == "get" || command == "status") request = ts::protocol::GetTask{id.value()};
             else if (command == "cancel") request = ts::protocol::CancelTask{id.value()};
             else if (command == "retry") request = ts::protocol::RetryTask{id.value()};
-            else request = ts::protocol::GetLogs{id.value(), {}, ts::protocol::Stream::Stdout, 0, 262144, {}};
         } else if (command == "workers") request = ts::protocol::ListWorkers{};
         else if (command != "list") throw std::invalid_argument("unknown command");
         if (i != argc) throw std::invalid_argument("unexpected argument");
         auto connected = ts::client::Client::connect(endpoint); if (!connected) throw std::runtime_error(connected.error().message);
-        if (command == "list") {
+        if (command == "logs") {
+            auto log = std::get<ts::protocol::GetLogs>(*request);
+            auto consume = [&](const ts::protocol::GetLogsResponse& page) {
+                if (json) display(page, true);
+                else {
+                    const auto raw = ts::protocol::base64_decode(page.data_base64, static_cast<std::size_t>(ts::protocol::kMaxLogPage));
+                    if (!raw) throw std::runtime_error(raw.error().message);
+                    std::cout.write(raw.value().data(), static_cast<std::streamsize>(raw.value().size()));
+                    if (!std::cout) throw std::runtime_error("binary log output write failed");
+                }
+            };
+            auto fetched = connected.value()->logs(log, consume);
+            if (!fetched) throw std::runtime_error(fetched.error().message);
+            if (both) {
+                log.stream = ts::protocol::Stream::Stderr;
+                fetched = connected.value()->logs(log, consume);
+                if (!fetched) throw std::runtime_error(fetched.error().message);
+            }
+        } else if (command == "list") {
             auto listed = connected.value()->list([&](const auto& page) { display(page, json); });
             if (!listed) throw std::runtime_error(listed.error().message);
         } else {

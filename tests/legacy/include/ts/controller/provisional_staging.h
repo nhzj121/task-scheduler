@@ -1,4 +1,5 @@
 #pragma once
+// Historical M7 unit fixture only. Not linked into production applications.
 
 #include <array>
 #include <map>
