@@ -191,7 +191,10 @@ if(BUILD_TESTING)
       cancelled_log_namespace_and_file_sync_failures_never_claim_complete
       idle_reconnect_registration_rejection_backoff_resets_heartbeat_and_credit
       assignment_before_after_commit_crash_has_no_run_and_exact_recovery
-      cancel_terminal_before_after_commit_crash_does_not_infer_from_synced_files)
+      cancel_terminal_before_after_commit_crash_does_not_infer_from_synced_files
+      negative_cancel_ack_with_heartbeats_holds_lost_commit_and_replacement
+      negative_cancel_ack_after_finish_keeps_barrier_and_durable_natural_result
+      negative_cancel_ack_preserves_finish_deferred_behind_metadata)
     add_test(NAME M9Loopback.${m9_case}
       COMMAND ${TS_PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/integration/m9_loopback.py
       --bin $<TARGET_FILE_DIR:controller> --case test_${m9_case})

@@ -24,6 +24,7 @@ struct Hook final : ts::storage::SqliteHook {
         if (!armed) return SQLITE_OK;
         if (stage == S::Prepare && (mode.find("loss") != std::string::npos ?
             std::strstr(sql, "UPDATE attempts SET state='LOST'") != nullptr :
+            mode == "hold-advance" ? std::strstr(sql, "UPDATE attempts SET state='STARTING'") != nullptr :
             std::strstr(sql, "UPDATE tasks SET state=?") != nullptr)) selected = true;
         if (!selected) return SQLITE_OK;
         if (stage == S::Commit) {

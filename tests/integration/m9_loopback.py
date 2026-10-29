@@ -725,6 +725,121 @@ class M9Loopback(Harness):
                 self.stop(worker)
                 self.stop(self.proc)
 
+    def test_negative_cancel_ack_with_heartbeats_holds_lost_commit_and_replacement(self):
+        self.gated("hold-loss")
+        old = self.peer(True)
+        self.assertTrue(old.register("unknown-attempt-worker", cpu=1)[2]["accepted"])
+        task, _ = self.raw_run(old)
+        old.heartbeat(1)
+        prior_heartbeat = eventually(lambda: self.workers()[0]["last_heartbeat_at"])
+        self.assertEqual(self.cli("cancel", task)[0]["status"], "accepted")
+        kind, request, command = receive(old.sock)
+        self.assertEqual(kind, 0x020A)
+        self.arm()
+        self.cancel_ack(old, command, request, accepted=False, already_terminal=False, message="unknown Attempt")
+        # Keep heartbeats valid while waiting. An unfixed Controller cannot pass
+        # by eventually losing this session to its ordinary heartbeat deadline.
+        sequence = 1
+        deadline = time.monotonic() + 3
+        while not select.select([self.gate_read], [], [], 0.02)[0]:
+            sequence += 1
+            old.heartbeat(sequence)
+            self.assertLess(time.monotonic(), deadline, "negative ACK never initiated LOST despite live heartbeats")
+        self.assertEqual(os.read(self.gate_read, 1), b"G")
+        replacement = self.peer(True)
+        replacement.worker, replacement.session = old.worker, uid()
+        replacement.sock.sendall(frame(0x0201, dict(worker_id=replacement.worker, session_id=replacement.session,
+            capacity=dict(cpu_slots=1, memory_mb=100), max_concurrent_tasks=1, worker_version="m9-cleanup"), 1))
+        deadline = time.monotonic() + 0.2
+        while time.monotonic() < deadline:
+            sequence += 1
+            old.heartbeat(sequence)
+            self.assertFalse(select.select([old.sock, replacement.sock], [], [], 0.02)[0],
+                             "old close or replacement ACK escaped before LOST COMMIT")
+        self.assertEqual(self.db("SELECT state FROM tasks WHERE task_id=?", (task,)), [("ACTIVE",)])
+        self.assertEqual(self.db("SELECT state,logs_complete FROM attempts WHERE task_id=?", (task,)), [("RUNNING", 0)])
+        view = self.workers()
+        self.assertEqual(len(view), 1)
+        self.assertEqual(view[0]["session_id"], old.session)
+        self.assertEqual(view[0]["reserved"]["cpu_slots"], 1)
+        self.assertEqual(view[0]["running_attempts"], 1)
+        self.assertEqual(view[0]["last_heartbeat_at"], prior_heartbeat, "invalidated peer must not refresh its lease")
+        # This Worker never sends FINISH: only the conservative loss path can finish.
+        self.release()
+        self.assertEqual(old.sock.recv(1), b"")
+        ack = receive(replacement.sock)
+        self.assertEqual((ack[0], ack[1], ack[2]["accepted"]), (0x0202, 1, True))
+        attempt = self.complete(task, "FAILED")
+        self.assertEqual(attempt["state"], "LOST")
+        self.assertFalse(attempt["logs_complete"])
+        self.assertEqual(len(self.get(task)["attempts"]), 1)
+        view = self.workers()[0]
+        self.assertEqual((view["state"], view["session_id"], view["reserved"]["cpu_slots"], view["running_attempts"]),
+                         ("HEALTHY", replacement.session, 0, 0))
+
+    def test_negative_cancel_ack_after_finish_keeps_barrier_and_durable_natural_result(self):
+        self.fault_controller("hold-file-out")
+        peer = self.peer(True)
+        peer.register()
+        task, run = self.raw_run(peer)
+        self.cli("cancel", task)
+        _, request, command = receive(peer.sock)
+        self.finished(peer, run)
+        self.held()
+        self.cancel_ack(peer, command, request, accepted=False, already_terminal=False, message="unknown Attempt")
+        peer.heartbeat(1)
+        eventually(lambda: self.workers()[0]["last_heartbeat_at"])
+        view = self.get(task)
+        self.assertEqual(view["task"]["state"], "ACTIVE")
+        self.assertTrue(view["attempts"][0]["finalization_pending"])
+        self.assertFalse(view["attempts"][0]["logs_complete"])
+        self.assertEqual(self.workers()[0]["reserved"]["cpu_slots"], 1)
+        self.assertFalse(select.select([peer.sock], [], [], 0.05)[0])
+        self.release()
+        self.assertTrue(self.complete(task)["logs_complete"])
+        self.assertEqual(self.get(task)["attempts"][0]["exit_code"], 0)
+        # A different correlation receives its negative ACK only after SQL terminal
+        # commit. Preserve immutable history and the still-healthy session too.
+        second, run = self.raw_run(peer)
+        self.cli("cancel", second)
+        _, request, command = receive(peer.sock)
+        self.finished(peer, run)
+        self.complete(second)
+        before = self.db("SELECT * FROM attempts WHERE task_id=?", (second,))
+        heartbeat = self.workers()[0]["last_heartbeat_at"]
+        self.cancel_ack(peer, command, request, accepted=False, already_terminal=False, message="unknown Attempt")
+        peer.heartbeat(2)
+        eventually(lambda: self.workers()[0]["last_heartbeat_at"] != heartbeat)
+        self.assertEqual(self.workers()[0]["state"], "HEALTHY")
+        self.assertEqual(self.get(second)["task"]["state"], "SUCCEEDED")
+        self.assertEqual(self.db("SELECT * FROM attempts WHERE task_id=?", (second,)), before)
+
+    def test_negative_cancel_ack_preserves_finish_deferred_behind_metadata(self):
+        self.gated("hold-advance")
+        peer = self.peer(True)
+        peer.register()
+        task = self.submit("/bin/true")
+        kind, run_request, run = receive(peer.sock)
+        self.assertEqual(kind, 0x0204)
+        self.assertEqual(self.cli("cancel", task)[0]["status"], "accepted")
+        _, cancel_request, command = receive(peer.sock)
+        self.arm()
+        self.acknowledge(peer, run, run_request)
+        self.finished(peer, run)
+        self.cancel_ack(peer, command, cancel_request, accepted=False, already_terminal=False, message="unknown Attempt")
+        peer.heartbeat(1)
+        self.held()
+        # STARTING has not committed, so FINISH is queued behind that mutation,
+        # rather than installed in TaskManager::finalization_pending yet.
+        self.assertEqual(self.db("SELECT state FROM attempts WHERE task_id=?", (task,)), [("ASSIGNED",)])
+        eventually(lambda: self.workers()[0]["last_heartbeat_at"])
+        self.assertEqual(self.workers()[0]["reserved"]["cpu_slots"], 1)
+        self.release()
+        attempt = self.complete(task)
+        self.assertEqual(attempt["exit_code"], 0)
+        self.assertTrue(attempt["logs_complete"])
+        self.assertEqual(self.workers()[0]["state"], "HEALTHY")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

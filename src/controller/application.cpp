@@ -394,6 +394,16 @@ struct Application::Impl final : PersistencePort, EffectPort {
             peer.cancels.erase(pending);
             const auto row = manager->task(task);
             if (row && row->state == domain::TaskState::ACTIVE) {
+                const auto observation = peer.observations.find(ack->attempt_id);
+                // FINISH may already be validated but deferred behind an earlier
+                // metadata mutation, before TaskManager installs finalization.
+                const bool observed = observation != peer.observations.end() && observation->second.finished;
+                if (!ack->accepted && row->latest_attempt_id == ack->attempt_id.value() &&
+                    !observed && !manager->finalization_pending(task)) {
+                    peer.quarantined = true;
+                    if (manager->invalidate(key) == Decision::Degraded) fail("negative CANCEL ACK loss persistence unavailable");
+                    return !fatal;
+                }
                 const auto result = manager->receive(task, CancelAckEvent{ack->attempt_id, key});
                 if (result == Decision::Degraded) fail("cancel receipt unavailable");
                 else if (result != Decision::Accepted && result != Decision::Deferred && result != Decision::Stale) return false;
