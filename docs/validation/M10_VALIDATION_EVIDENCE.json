@@ -1,0 +1,880 @@
+{
+  "review_date": "2026-10-31 Asia/Shanghai",
+  "baseline": "8bffdcf302adf31a73aa01926004de217a6f2a46",
+  "branch": "milestone-10-deployment-hardening-benchmark",
+  "protected_sha256": {
+    "build_note": "8bda49a0af4e612892bafdba48effb924573e02a6ccea33b3aa8bd5991d813ae",
+    "personal_notes": "4b2e5a53c77198e9278ebdd3cf40be93ec4468d5707435f4729d26b4dabbc882"
+  },
+  "inventory": {
+    "baseline": 466,
+    "final": 473,
+    "original_names_and_labels_unchanged": true,
+    "new_cases": {
+      "M10Protocol.RepeatedLateFieldRejectionRetainsDiagnosticsAndReleasesDecodedOwners": [
+        "m10"
+      ],
+      "M10.sanitizer_runtime_probe": [
+        "m10"
+      ],
+      "M10.staged_install_and_configurations": [
+        "integration",
+        "m10"
+      ],
+      "M10.local_lifecycle_and_durable_workflows": [
+        "integration",
+        "m10"
+      ],
+      "M10.operational_rejections_and_private_diagnostics": [
+        "integration",
+        "m10"
+      ],
+      "M10.script_ownership_spaces_and_reruns": [
+        "integration",
+        "m10"
+      ],
+      "M10.benchmark_terminal_accounting": [
+        "integration",
+        "m10"
+      ]
+    },
+    "baseline_inventory_sha256": "2a66c344cd95ee3ad76d770d77b02fb97fa8af387b877db2e1491fbdabf5bd23"
+  },
+  "debug_full": {
+    "cases": 473,
+    "executions": 473,
+    "seconds": 70.48,
+    "log": "/home/nhzj121/build/task_scheduler/m10-delivery-ctest.log",
+    "log_sha256": "ce75290d678898731c17529c42e92bc7e46e1a75c3d58bf9c0058011812267b0",
+    "status": "PASS"
+  },
+  "m10_repeat": {
+    "cases": 7,
+    "executions": 140,
+    "seconds": 131.85,
+    "log": "/home/nhzj121/build/task_scheduler/m10-delivery-repeat.log",
+    "log_sha256": "4226a81dbdbfd7fa3a70dec32ce5c12e0a61c5da02b8a0b68ec3722df14a255a",
+    "status": "PASS"
+  },
+  "m9_fault_repeat": {
+    "cases": 36,
+    "executions": 720,
+    "seconds": 514.74,
+    "log": "/home/nhzj121/build/task_scheduler/m10-m9-fault-repeat.log",
+    "log_sha256": "b0d6fcf8e88352a9a865ed7f02becf612167b25e29546e3e6beb5e9533ac64bd",
+    "status": "PASS"
+  },
+  "asan_full": {
+    "cases": 473,
+    "executions": 473,
+    "seconds": 115.16,
+    "log": "/home/nhzj121/build/task_scheduler-m10-asan/ctest.log",
+    "log_sha256": "48762705b08e7345bf06926c42faf826ad6a21af3a8e5b8caa8755d94d3674f5",
+    "status": "PASS"
+  },
+  "asan_updated_tools": {
+    "cases": 7,
+    "executions": 7,
+    "seconds": 8.5,
+    "log": "/home/nhzj121/build/task_scheduler/m10-delivery-asan-m10.log",
+    "log_sha256": "9d01b115a1ab3e0eef26612b0cc225f6c8e1667e3ff8cb17befccec498748b48",
+    "status": "PASS"
+  },
+  "asan_runner": {
+    "mode": "asan",
+    "source": "/mnt/e/Deck_all_need/projects/work/task_scheduler",
+    "build": "/home/nhzj121/build/task_scheduler-m10-asan",
+    "status": "PASS",
+    "commands": [
+      {
+        "argv": [
+          "cmake",
+          "-S",
+          "/mnt/e/Deck_all_need/projects/work/task_scheduler",
+          "-B",
+          "/home/nhzj121/build/task_scheduler-m10-asan",
+          "-DCMAKE_BUILD_TYPE=Debug",
+          "-DBUILD_TESTING=ON",
+          "-DTS_SANITIZER=address",
+          "-DCMAKE_GTEST_DISCOVER_TESTS_DISCOVERY_MODE=PRE_TEST"
+        ],
+        "exit_code": 0,
+        "seconds": 1.2533376079991285,
+        "log": "/home/nhzj121/build/task_scheduler-m10-asan/configure.log"
+      },
+      {
+        "argv": [
+          "cmake",
+          "--build",
+          "/home/nhzj121/build/task_scheduler-m10-asan",
+          "-j2"
+        ],
+        "exit_code": 0,
+        "seconds": 28.386076160000812,
+        "log": "/home/nhzj121/build/task_scheduler-m10-asan/build.log"
+      },
+      {
+        "argv": [
+          "/home/nhzj121/build/task_scheduler-m10-asan/ts_sanitizer_probe"
+        ],
+        "exit_code": 0,
+        "seconds": 0.07931110200297553,
+        "log": "/home/nhzj121/build/task_scheduler-m10-asan/runtime-probe.log"
+      },
+      {
+        "argv": [
+          "ctest",
+          "--test-dir",
+          "/home/nhzj121/build/task_scheduler-m10-asan",
+          "--output-on-failure"
+        ],
+        "exit_code": 0,
+        "seconds": 115.17249390100187,
+        "log": "/home/nhzj121/build/task_scheduler-m10-asan/ctest.log"
+      }
+    ],
+    "options": {
+      "ASAN_OPTIONS": "detect_leaks=1:halt_on_error=1:abort_on_error=1",
+      "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1"
+    }
+  },
+  "tsan_runner": {
+    "mode": "tsan",
+    "source": "/mnt/e/Deck_all_need/projects/work/task_scheduler",
+    "build": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12",
+    "status": "PASS",
+    "commands": [
+      {
+        "argv": [
+          "cmake",
+          "-S",
+          "/mnt/e/Deck_all_need/projects/work/task_scheduler",
+          "-B",
+          "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12",
+          "-DCMAKE_BUILD_TYPE=Debug",
+          "-DBUILD_TESTING=ON",
+          "-DTS_SANITIZER=thread",
+          "-DCMAKE_GTEST_DISCOVER_TESTS_DISCOVERY_MODE=PRE_TEST"
+        ],
+        "exit_code": 0,
+        "seconds": 1.1644493830026477,
+        "log": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/configure.log"
+      },
+      {
+        "argv": [
+          "cmake",
+          "--build",
+          "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12",
+          "-j2"
+        ],
+        "exit_code": 0,
+        "seconds": 0.5578671059993212,
+        "log": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/build.log"
+      },
+      {
+        "argv": [
+          "setarch",
+          "x86_64",
+          "-R",
+          "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_sanitizer_probe"
+        ],
+        "exit_code": 0,
+        "seconds": 0.0067230700005893596,
+        "log": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/runtime-probe.log"
+      },
+      {
+        "argv": [
+          "setarch",
+          "x86_64",
+          "-R",
+          "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_milestone1_tests",
+          "--gtest_filter=BoundedQueue.*"
+        ],
+        "exit_code": 0,
+        "seconds": 0.022154067999508698,
+        "log": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_milestone1_tests.log"
+      },
+      {
+        "argv": [
+          "setarch",
+          "x86_64",
+          "-R",
+          "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_milestone2_tests",
+          "--gtest_filter=*Channel*:*Wakeup*"
+        ],
+        "exit_code": 0,
+        "seconds": 0.0359285849990556,
+        "log": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_milestone2_tests.log"
+      },
+      {
+        "argv": [
+          "setarch",
+          "x86_64",
+          "-R",
+          "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_milestone5_tests",
+          "--gtest_filter=StoreTest.CountReserve*:StoreTest.CompletionByte*:StoreTest.SlowSqlite*:StoreTest.Eventfd*:StorageStress.*:StorageChannel.Notification*"
+        ],
+        "exit_code": 0,
+        "seconds": 1.1055819280009018,
+        "log": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_milestone5_tests.log"
+      },
+      {
+        "argv": [
+          "setarch",
+          "x86_64",
+          "-R",
+          "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_milestone8_tests",
+          "--gtest_filter=LogWriter.*"
+        ],
+        "exit_code": 0,
+        "seconds": 0.38537879700015765,
+        "log": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_milestone8_tests.log"
+      }
+    ],
+    "options": {
+      "TSAN_OPTIONS": "halt_on_error=1"
+    },
+    "runtime_workaround": "explicit process-local fixed address layout via setarch -R"
+  },
+  "tsan_clockwait_compatibility": {
+    "11": {
+      "argv": [
+        "setarch",
+        "x86_64",
+        "-R",
+        "/home/nhzj121/build/task_scheduler-m10-toolchain/clockwait_probe11-final"
+      ],
+      "exit_code": 66,
+      "diagnostic_excerpt": [
+        "==================",
+        "WARNING: ThreadSanitizer: double lock of a mutex (pid=813)",
+        "    #0 pthread_mutex_lock ../../../../src/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:4240 (libtsan.so.0+0x53908)",
+        "    #1 __gthread_mutex_lock /usr/include/x86_64-linux-gnu/c++/11/bits/gthr-default.h:749 (clockwait_probe11-final+0x4023f5)",
+        "    #2 std::mutex::lock() /usr/include/c++/11/bits/std_mutex.h:100 (clockwait_probe11-final+0x40247e)",
+        "    #3 std::unique_lock<std::mutex>::lock() /usr/include/c++/11/bits/unique_lock.h:139 (clockwait_probe11-final+0x402a47)",
+        "    #4 std::unique_lock<std::mutex>::unique_lock(std::mutex&) /usr/include/c++/11/bits/unique_lock.h:69 (clockwait_probe11-final+0x4027e8)",
+        "    #5 operator() /mnt/e/Deck_all_need/projects/work/task_scheduler/tests/helpers/tsan_clockwait_probe.cpp:16 (clockwait_probe11-final+0x401551)",
+        "    #6 __invoke_impl<void, main()::<lambda()> > /usr/include/c++/11/bits/invoke.h:61 (clockwait_probe11-final+0x4021ac)",
+        "    #7 __invoke<main()::<lambda()> > /usr/include/c++/11/bits/invoke.h:96 (clockwait_probe11-final+0x402123)",
+        "    #8 _M_invoke<0> /usr/include/c++/11/bits/std_thread.h:259 (clockwait_probe11-final+0x402084)",
+        "    #9 operator() /usr/include/c++/11/bits/std_thread.h:266 (clockwait_probe11-final+0x40202a)",
+        "    #10 _M_run /usr/include/c++/11/bits/std_thread.h:211 (clockwait_probe11-final+0x401fe0)",
+        "    #11 <null> <null> (libstdc++.so.6+0xdc252)"
+      ]
+    },
+    "12": {
+      "argv": [
+        "setarch",
+        "x86_64",
+        "-R",
+        "/home/nhzj121/build/task_scheduler-m10-toolchain/clockwait_probe12-final"
+      ],
+      "exit_code": 0,
+      "diagnostic_excerpt": [
+        "RELOCKED"
+      ]
+    }
+  },
+  "systemd": {
+    "status": "PASS",
+    "prefix": "ts-m10-14a2e0b3f5",
+    "observations": {
+      "initial_sessions": {
+        "system-worker-a": "83ac4442-224a-4f34-a4c0-b47450066309",
+        "system-worker-b": "27a26a1c-bcf2-4763-979f-e1aba539f7b3"
+      },
+      "standalone_worker": {
+        "uid": 998,
+        "initial_session": "25d66c70-ea2b-4dd7-963e-f399c476690c",
+        "restarted_session": "cf945817-0cba-46d9-b9ad-bfdcdd351209"
+      },
+      "ts-m10-14a2e0b3f5-controller.service": {
+        "pid": 101857,
+        "uid": 999,
+        "fds": 17,
+        "threads": 3
+      },
+      "ts-m10-14a2e0b3f5-worker@a.service": {
+        "pid": 101871,
+        "uid": 998,
+        "fds": 9,
+        "threads": 1
+      },
+      "ts-m10-14a2e0b3f5-worker@b.service": {
+        "pid": 101874,
+        "uid": 998,
+        "fds": 9,
+        "threads": 1
+      },
+      "recovered_sessions": {
+        "system-worker-a": "d380c056-e4a2-4ca8-a1c6-a092e769dfa0",
+        "system-worker-b": "111a9882-6bd3-4b82-8acc-b2d4412aa04d"
+      },
+      "worker_stop_children_reaped": [
+        "101912"
+      ],
+      "recovered_running_task": "901e98e7-4356-41c3-abbf-90dfeb85f39f",
+      "retained_pending": "277450ec-3a73-4a22-a01a-b02d88e32930",
+      "retained_terminal": "b710cfe4-193c-48c9-b80b-cd3f80fef82c"
+    },
+    "commands": [
+      {
+        "argv": [
+          "useradd",
+          "--system",
+          "--user-group",
+          "--no-create-home",
+          "--shell",
+          "/usr/sbin/nologin",
+          "ts-m10-14a2e0b3f5c"
+        ],
+        "code": 0,
+        "seconds": 0.0686197130016808
+      },
+      {
+        "argv": [
+          "useradd",
+          "--system",
+          "--user-group",
+          "--no-create-home",
+          "--shell",
+          "/usr/sbin/nologin",
+          "ts-m10-14a2e0b3f5w"
+        ],
+        "code": 0,
+        "seconds": 0.07592404399838415
+      },
+      {
+        "argv": [
+          "systemd-analyze",
+          "verify",
+          "/run/systemd/system/ts-m10-14a2e0b3f5-controller.service",
+          "/run/systemd/system/ts-m10-14a2e0b3f5-worker@.service",
+          "/run/systemd/system/ts-m10-14a2e0b3f5-worker.service"
+        ],
+        "code": 0,
+        "seconds": 0.05404995099888765
+      },
+      {
+        "argv": [
+          "systemctl",
+          "daemon-reload"
+        ],
+        "code": 0,
+        "seconds": 0.08118899300097837
+      },
+      {
+        "argv": [
+          "systemctl",
+          "start",
+          "ts-m10-14a2e0b3f5-controller.service"
+        ],
+        "code": 0,
+        "seconds": 0.02761071900022216
+      },
+      {
+        "argv": [
+          "systemctl",
+          "is-active",
+          "ts-m10-14a2e0b3f5-controller.service"
+        ],
+        "code": 0,
+        "seconds": 0.0028550679999170825
+      },
+      {
+        "argv": [
+          "systemctl",
+          "start",
+          "ts-m10-14a2e0b3f5-worker@a.service",
+          "ts-m10-14a2e0b3f5-worker@b.service"
+        ],
+        "code": 0,
+        "seconds": 0.04526560999875073
+      },
+      {
+        "argv": [
+          "systemctl",
+          "start",
+          "ts-m10-14a2e0b3f5-worker.service"
+        ],
+        "code": 0,
+        "seconds": 0.005716200001188554
+      },
+      {
+        "argv": [
+          "systemctl",
+          "show",
+          "ts-m10-14a2e0b3f5-worker.service",
+          "-p",
+          "MainPID",
+          "--value"
+        ],
+        "code": 0,
+        "seconds": 0.004484238997974899
+      },
+      {
+        "argv": [
+          "systemctl",
+          "restart",
+          "ts-m10-14a2e0b3f5-worker.service"
+        ],
+        "code": 0,
+        "seconds": 0.0047180430010485
+      },
+      {
+        "argv": [
+          "systemctl",
+          "stop",
+          "ts-m10-14a2e0b3f5-worker.service"
+        ],
+        "code": 0,
+        "seconds": 0.004815896001673536
+      },
+      {
+        "argv": [
+          "systemctl",
+          "show",
+          "ts-m10-14a2e0b3f5-controller.service",
+          "-p",
+          "MainPID",
+          "--value"
+        ],
+        "code": 0,
+        "seconds": 0.004784338998433668
+      },
+      {
+        "argv": [
+          "systemctl",
+          "show",
+          "ts-m10-14a2e0b3f5-worker@a.service",
+          "-p",
+          "MainPID",
+          "--value"
+        ],
+        "code": 0,
+        "seconds": 0.004652281000744551
+      },
+      {
+        "argv": [
+          "systemctl",
+          "show",
+          "ts-m10-14a2e0b3f5-worker@b.service",
+          "-p",
+          "MainPID",
+          "--value"
+        ],
+        "code": 0,
+        "seconds": 0.004906086000119103
+      },
+      {
+        "argv": [
+          "systemctl",
+          "show",
+          "ts-m10-14a2e0b3f5-worker@a.service",
+          "-p",
+          "MainPID",
+          "--value"
+        ],
+        "code": 0,
+        "seconds": 0.003979962999437703
+      },
+      {
+        "argv": [
+          "systemctl",
+          "stop",
+          "ts-m10-14a2e0b3f5-worker@a.service"
+        ],
+        "code": 0,
+        "seconds": 0.012877987999672769
+      },
+      {
+        "argv": [
+          "systemctl",
+          "is-active",
+          "ts-m10-14a2e0b3f5-worker@a.service"
+        ],
+        "code": 3,
+        "seconds": 0.002999586002260912
+      },
+      {
+        "argv": [
+          "systemctl",
+          "start",
+          "ts-m10-14a2e0b3f5-worker@a.service"
+        ],
+        "code": 0,
+        "seconds": 0.044030045002728
+      },
+      {
+        "argv": [
+          "systemctl",
+          "restart",
+          "ts-m10-14a2e0b3f5-controller.service"
+        ],
+        "code": 0,
+        "seconds": 0.034292126998479944
+      },
+      {
+        "argv": [
+          "systemctl",
+          "restart",
+          "ts-m10-14a2e0b3f5-worker@b.service"
+        ],
+        "code": 0,
+        "seconds": 0.03139172499868437
+      },
+      {
+        "argv": [
+          "systemctl",
+          "stop",
+          "ts-m10-14a2e0b3f5-worker.service"
+        ],
+        "code": 0,
+        "seconds": 0.0037695720020565204
+      },
+      {
+        "argv": [
+          "systemctl",
+          "reset-failed",
+          "ts-m10-14a2e0b3f5-worker.service"
+        ],
+        "code": 1,
+        "seconds": 0.0030539899998984765
+      },
+      {
+        "argv": [
+          "systemctl",
+          "stop",
+          "ts-m10-14a2e0b3f5-worker@b.service"
+        ],
+        "code": 0,
+        "seconds": 0.004047063997859368
+      },
+      {
+        "argv": [
+          "systemctl",
+          "reset-failed",
+          "ts-m10-14a2e0b3f5-worker@b.service"
+        ],
+        "code": 1,
+        "seconds": 0.0019573690005927347
+      },
+      {
+        "argv": [
+          "systemctl",
+          "stop",
+          "ts-m10-14a2e0b3f5-worker@a.service"
+        ],
+        "code": 0,
+        "seconds": 0.004153081998083508
+      },
+      {
+        "argv": [
+          "systemctl",
+          "reset-failed",
+          "ts-m10-14a2e0b3f5-worker@a.service"
+        ],
+        "code": 1,
+        "seconds": 0.002080051999655552
+      },
+      {
+        "argv": [
+          "systemctl",
+          "stop",
+          "ts-m10-14a2e0b3f5-controller.service"
+        ],
+        "code": 0,
+        "seconds": 0.007337495997489896
+      },
+      {
+        "argv": [
+          "systemctl",
+          "reset-failed",
+          "ts-m10-14a2e0b3f5-controller.service"
+        ],
+        "code": 1,
+        "seconds": 0.003906060999725014
+      },
+      {
+        "argv": [
+          "journalctl",
+          "-u",
+          "ts-m10-14a2e0b3f5-controller.service",
+          "--no-pager",
+          "-o",
+          "short-unix"
+        ],
+        "code": 0,
+        "seconds": 0.007750059998215875
+      },
+      {
+        "argv": [
+          "journalctl",
+          "-u",
+          "ts-m10-14a2e0b3f5-worker@a.service",
+          "--no-pager",
+          "-o",
+          "short-unix"
+        ],
+        "code": 0,
+        "seconds": 0.006791946998419007
+      },
+      {
+        "argv": [
+          "journalctl",
+          "-u",
+          "ts-m10-14a2e0b3f5-worker@b.service",
+          "--no-pager",
+          "-o",
+          "short-unix"
+        ],
+        "code": 0,
+        "seconds": 0.007786762002069736
+      },
+      {
+        "argv": [
+          "journalctl",
+          "-u",
+          "ts-m10-14a2e0b3f5-worker.service",
+          "--no-pager",
+          "-o",
+          "short-unix"
+        ],
+        "code": 0,
+        "seconds": 0.007055570000375155
+      },
+      {
+        "argv": [
+          "systemctl",
+          "daemon-reload"
+        ],
+        "code": 0,
+        "seconds": 0.09587877200101502
+      },
+      {
+        "argv": [
+          "userdel",
+          "ts-m10-14a2e0b3f5w"
+        ],
+        "code": 0,
+        "seconds": 0.050072032998286886
+      },
+      {
+        "argv": [
+          "userdel",
+          "ts-m10-14a2e0b3f5c"
+        ],
+        "code": 0,
+        "seconds": 0.06051528600073652
+      }
+    ],
+    "cleanup_errors": [],
+    "cleanup_independently_verified": true,
+    "raw_evidence_directory": "/home/nhzj121/build/task_scheduler/m10-systemd-complete",
+    "unrelated_verify_warning": "installed snapd.service RestartMode directive"
+  },
+  "benchmark": {
+    "status": "PASS",
+    "raw_sha256": "0790f168fcb82df54f50f00b39573bc39181e8684760998e96d169f90ecd6445",
+    "runs": 12,
+    "measured_tasks": 240,
+    "warmup_tasks": 24,
+    "failed_measured_tasks": 0,
+    "all_live_reservations_released": true,
+    "all_owned_services_stopped": true,
+    "source": "/home/nhzj121/build/task_scheduler-m10-benchmark-delivery/results.json"
+  },
+  "final_named_project_process_scan": [],
+  "python": {
+    "executable": "/usr/bin/python3",
+    "version": "3.10.12"
+  },
+  "hosted_ci_executed": false,
+  "physical_power_loss_tested": false,
+  "isolated_toolchain_packages": [
+    {
+      "file": "cpp-12_12.3.0-1ubuntu1~22.04.3_amd64.deb",
+      "sha256": "58a71c973aaaa24e2194ac061c362118e9aab3f2c926c92f6ecc70f82ac78c76"
+    },
+    {
+      "file": "g++-12_12.3.0-1ubuntu1~22.04.3_amd64.deb",
+      "sha256": "c4123ea47a1d422ec43fb0918f670cfeb7bef1f26e6bf372fe15099fd42bbfcd"
+    },
+    {
+      "file": "gcc-12-base_12.3.0-1ubuntu1~22.04.3_amd64.deb",
+      "sha256": "7f9253b7e0976f0526fc21346c73ee006e185a7b2f2f865048ea78a2af55bc8d"
+    },
+    {
+      "file": "gcc-12_12.3.0-1ubuntu1~22.04.3_amd64.deb",
+      "sha256": "f1ce0ee798bd9c3d30c5602962521fc7faf309795fc6596de88df1cfc4732d55"
+    },
+    {
+      "file": "libasan8_12.3.0-1ubuntu1~22.04.3_amd64.deb",
+      "sha256": "128ebe42a08b99f9cfc90c30a05a21e7b6a588189047f58340018b382be2214c"
+    },
+    {
+      "file": "libgcc-12-dev_12.3.0-1ubuntu1~22.04.3_amd64.deb",
+      "sha256": "a9933d9949219f3a0598bf48390091f45c03c036fe736de38f33b7c60eddca0e"
+    },
+    {
+      "file": "libstdc++-12-dev_12.3.0-1ubuntu1~22.04.3_amd64.deb",
+      "sha256": "250f538cb3a5dfbbb767e16cb3d840a2b113de1582bec155ea97600740a6ed1e"
+    },
+    {
+      "file": "libtsan2_12.3.0-1ubuntu1~22.04.3_amd64.deb",
+      "sha256": "00de3a2dcf17bea7c48ffa875c2ca09495ba0623f5b6bcfbbc93b99b6603ff4f"
+    }
+  ],
+  "benchmark_history": [
+    {
+      "artifact_root": "/home/nhzj121/build/task_scheduler-m10-benchmark-primary",
+      "original_output_status": "PASS",
+      "completed_runs": 12,
+      "raw_sha256": "5e3d8e002e0933aac60313d87a2b4fad68ed47d4eeb9b29d59ea8f9872ce07b9",
+      "summaries": [
+        {
+          "workers": 1,
+          "workload": "empty",
+          "throughput_median": 24.964527466029764,
+          "throughput_min": 23.998240372269244,
+          "throughput_max": 25.115398790239976,
+          "observed_latency_p50": 0.3381036380014848,
+          "observed_latency_p95": 0.5082469459994172
+        },
+        {
+          "workers": 1,
+          "workload": "binary",
+          "throughput_median": 20.25521298974718,
+          "throughput_min": 18.89346321462521,
+          "throughput_max": 20.766846931688406,
+          "observed_latency_p50": 0.3936914420009998,
+          "observed_latency_p95": 0.781906632000755
+        },
+        {
+          "workers": 2,
+          "workload": "empty",
+          "throughput_median": 25.529349204853656,
+          "throughput_min": 25.292785075142824,
+          "throughput_max": 26.731981022806746,
+          "observed_latency_p50": 0.4779335989987885,
+          "observed_latency_p95": 0.6949711119996209
+        },
+        {
+          "workers": 2,
+          "workload": "binary",
+          "throughput_median": 27.03725938751294,
+          "throughput_min": 26.4465566303922,
+          "throughput_max": 27.677569752608573,
+          "observed_latency_p50": 0.4642149499995867,
+          "observed_latency_p95": 0.6677656089996162
+        }
+      ],
+      "classification": "earlier successful pilot, not pooled"
+    },
+    {
+      "artifact_root": "/home/nhzj121/build/task_scheduler-m10-benchmark-final",
+      "original_output_status": "RUNNING",
+      "completed_runs": 0,
+      "raw_sha256": "55f3aee19b405d621004652f2648382a09f3387e3f62199edad46d47621a55b7",
+      "summaries": [],
+      "classification": "startup failure, zero samples; guarded cleanup completed",
+      "stderr": "benchmark: owned process argv/config changed; refusing to signal it",
+      "cleanup_registry_absent": true
+    },
+    {
+      "artifact_root": "/home/nhzj121/build/task_scheduler-m10-benchmark-reviewed",
+      "original_output_status": "PASS",
+      "completed_runs": 12,
+      "raw_sha256": "48d0f88fc6af645a458c54211a9b841953eae3e4badca86b51c5a3b78a73f867",
+      "summaries": [
+        {
+          "workers": 1,
+          "workload": "empty",
+          "throughput_median": 23.49676223956179,
+          "throughput_min": 19.321376379422198,
+          "throughput_max": 23.77698446846673,
+          "observed_latency_p50": 0.49649876400002313,
+          "observed_latency_p95": 0.6543301170000291
+        },
+        {
+          "workers": 1,
+          "workload": "binary",
+          "throughput_median": 18.784307477204088,
+          "throughput_min": 17.062421703585578,
+          "throughput_max": 19.848553433356393,
+          "observed_latency_p50": 0.458313234000002,
+          "observed_latency_p95": 0.8318247349999979
+        },
+        {
+          "workers": 2,
+          "workload": "empty",
+          "throughput_median": 23.26669565177404,
+          "throughput_min": 22.85863914447371,
+          "throughput_max": 28.031392541515437,
+          "observed_latency_p50": 0.4890270700000201,
+          "observed_latency_p95": 0.7731877850000046
+        },
+        {
+          "workers": 2,
+          "workload": "binary",
+          "throughput_median": 25.995574820089978,
+          "throughput_min": 25.98596649188137,
+          "throughput_max": 27.006054635922094,
+          "observed_latency_p50": 0.5025766800000042,
+          "observed_latency_p95": 0.6641237069999875
+        }
+      ],
+      "classification": "earlier successful pilot, not pooled"
+    },
+    {
+      "artifact_root": "/home/nhzj121/build/task_scheduler-m10-benchmark-delivery",
+      "original_output_status": "PASS",
+      "completed_runs": 12,
+      "raw_sha256": "0790f168fcb82df54f50f00b39573bc39181e8684760998e96d169f90ecd6445",
+      "summaries": [
+        {
+          "workers": 1,
+          "workload": "empty",
+          "throughput_median": 28.376628690791094,
+          "throughput_min": 27.43018732052804,
+          "throughput_max": 29.46690317510111,
+          "observed_latency_p50": 0.3666238540000677,
+          "observed_latency_p95": 0.42305257900000015
+        },
+        {
+          "workers": 1,
+          "workload": "binary",
+          "throughput_median": 19.524789106186514,
+          "throughput_min": 18.7829292042895,
+          "throughput_max": 20.16872044259587,
+          "observed_latency_p50": 0.45784224900000936,
+          "observed_latency_p95": 0.7826994780000405
+        },
+        {
+          "workers": 2,
+          "workload": "empty",
+          "throughput_median": 25.355428144700415,
+          "throughput_min": 24.601102048186423,
+          "throughput_max": 25.8809087499272,
+          "observed_latency_p50": 0.5140562029999955,
+          "observed_latency_p95": 0.7138920290000215
+        },
+        {
+          "workers": 2,
+          "workload": "binary",
+          "throughput_median": 27.59499028680717,
+          "throughput_min": 27.14995461030005,
+          "throughput_max": 27.92995920340678,
+          "observed_latency_p50": 0.4716456390000303,
+          "observed_latency_p95": 0.6095851180000409
+        }
+      ],
+      "classification": "published delivery measurement"
+    }
+  ],
+  "initial_sanitizer_discovery": {
+    "protocol_leak": "six pre-fix LSan failures in initial 472-test run; repaired by owned field staging; final full 473 pass",
+    "initial_raw_log_retention": "runner ctest.log replaced by successful full rerun; diagnostic history retained in acceptance report and dedicated regression",
+    "gcc11_tsan": "pre-main mapping failure, then standalone-reproduced timed-CV mutex warning; resolved by actual GCC12 test execution"
+  }
+}

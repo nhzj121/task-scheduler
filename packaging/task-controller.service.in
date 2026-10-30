@@ -1,0 +1,22 @@
+[Unit]
+Description=Task Scheduler Controller (trusted local/private network only)
+After=network.target
+
+[Service]
+Type=simple
+User=task-controller
+Group=task-controller
+UMask=0077
+StateDirectory=task-scheduler/controller
+StateDirectoryMode=0700
+ExecStart="@CMAKE_INSTALL_FULL_BINDIR@/controller" --config /etc/task-scheduler/controller.json
+Restart=on-failure
+RestartSec=3s
+KillSignal=SIGTERM
+TimeoutStopSec=45s
+LimitNOFILE=16384
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

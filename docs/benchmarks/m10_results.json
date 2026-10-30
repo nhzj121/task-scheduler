@@ -1,0 +1,3718 @@
+{
+  "environment": {
+    "kernel": {
+      "system": "Linux",
+      "node": "<hostname omitted>",
+      "release": "6.18.54.1-microsoft-standard-WSL2",
+      "version": "#1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026",
+      "machine": "x86_64",
+      "processor": "x86_64"
+    },
+    "cpu_model": "13th Gen Intel(R) Core(TM) i7-13650HX",
+    "logical_cpus": 20,
+    "mem_total": "MemTotal:       12105596 kB",
+    "filesystem": "ext4   rw,relatime,discard,errors=remount-ro,data=ordered",
+    "compiler": "c++ (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0",
+    "cmake": "cmake version 3.22.1",
+    "sqlite": "3.37.2",
+    "clock_ticks": 100
+  },
+  "build_type": "Release",
+  "measurement": "sequential taskctl processes included; monotonic request issuance to first observed durable terminal; downloads validated afterward",
+  "topology": "one host, loopback, independent Workers share physical resources; advertised accounting is not enforcement",
+  "status": "PASS",
+  "runs": [
+    {
+      "workload": "empty",
+      "tasks": 20,
+      "successes": 20,
+      "failures": 0,
+      "bytes_per_stream": 0,
+      "warmup": 2,
+      "elapsed_terminal_seconds": 0.6787275840000575,
+      "elapsed_including_verification_seconds": 0.81640909500004,
+      "terminal_tasks_per_second": 29.46690317510111,
+      "samples": [
+        {
+          "task_id": "83d1d4e3-0904-4bd2-b389-18831b6c5b02",
+          "issued": 9.220000265486306e-07,
+          "submit_seconds": 0.009293562000038946,
+          "terminal_observed_seconds": 0.27691482800003087,
+          "end_to_end_seconds": 0.2769139060000043,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "89a65e3f-1d63-41be-af9a-81668c1be231",
+          "issued": 0.009295850000057726,
+          "submit_seconds": 0.010591384000008475,
+          "terminal_observed_seconds": 0.303428284000006,
+          "end_to_end_seconds": 0.29413243399994826,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "5f066729-cec6-4571-9b46-39dea1831805",
+          "issued": 0.019889098000021477,
+          "submit_seconds": 0.019342783999945823,
+          "terminal_observed_seconds": 0.32304360099999485,
+          "end_to_end_seconds": 0.3031545029999734,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "ac1cf541-79a1-42c0-827a-179a9c416fef",
+          "issued": 0.039234065000073315,
+          "submit_seconds": 0.017945334999922125,
+          "terminal_observed_seconds": 0.33921198699999877,
+          "end_to_end_seconds": 0.29997792199992546,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "8cc5ac0c-03ec-41e0-add7-89d56bee178b",
+          "issued": 0.057181009000032645,
+          "submit_seconds": 0.010307229999966694,
+          "terminal_observed_seconds": 0.3676571649999687,
+          "end_to_end_seconds": 0.31047615599993605,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "65bc0990-4043-4fbb-98cf-44272aece818",
+          "issued": 0.067489648999981,
+          "submit_seconds": 0.009912004000057095,
+          "terminal_observed_seconds": 0.3862753189999921,
+          "end_to_end_seconds": 0.3187856700000111,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "f6872443-22df-44f3-b537-7583f199ddd4",
+          "issued": 0.07740322500001184,
+          "submit_seconds": 0.013985218000016175,
+          "terminal_observed_seconds": 0.4040960099999893,
+          "end_to_end_seconds": 0.32669278499997745,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "7be33c1c-cccf-41e2-8209-6254d0a69003",
+          "issued": 0.09138987300002555,
+          "submit_seconds": 0.010241630999985318,
+          "terminal_observed_seconds": 0.4260582260000092,
+          "end_to_end_seconds": 0.33466835299998365,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "34ae85b5-2946-48eb-86de-c411a8e64a46",
+          "issued": 0.10163307699997404,
+          "submit_seconds": 0.009939417000055073,
+          "terminal_observed_seconds": 0.4503909960000101,
+          "end_to_end_seconds": 0.34875791900003605,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "64afdd6f-00fa-4112-b62e-304759ebca67",
+          "issued": 0.11157408700000815,
+          "submit_seconds": 0.018825974000037604,
+          "terminal_observed_seconds": 0.4658894760000294,
+          "end_to_end_seconds": 0.35431538900002124,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "e7b36c21-f0c7-4f2f-9ec6-19cd76d3e680",
+          "issued": 0.13040101900003265,
+          "submit_seconds": 0.015498935999971764,
+          "terminal_observed_seconds": 0.4907435899999655,
+          "end_to_end_seconds": 0.36034257099993283,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "78092e97-3fa7-464a-8067-d5175c3bb272",
+          "issued": 0.145901790000039,
+          "submit_seconds": 0.011893897999925684,
+          "terminal_observed_seconds": 0.5128804859999718,
+          "end_to_end_seconds": 0.3669786959999328,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "ce868547-8bf3-4174-9d6a-0fd5dba6f9d8",
+          "issued": 0.15779685200004678,
+          "submit_seconds": 0.015803852999965784,
+          "terminal_observed_seconds": 0.5326833330000227,
+          "end_to_end_seconds": 0.3748864809999759,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "96217ab6-1f95-4232-a53f-4ab81610f89f",
+          "issued": 0.17360205099998893,
+          "submit_seconds": 0.015020487000015237,
+          "terminal_observed_seconds": 0.5476875150000069,
+          "end_to_end_seconds": 0.37408546400001796,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "f89ecbd1-b499-4bd5-8106-7013cb6cec49",
+          "issued": 0.1886237759999858,
+          "submit_seconds": 0.01640074600004482,
+          "terminal_observed_seconds": 0.562869016000036,
+          "end_to_end_seconds": 0.3742452400000502,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "3b8a0f3e-b937-4066-9d88-c45d71cb7bcc",
+          "issued": 0.20502638100003878,
+          "submit_seconds": 0.014260946000035801,
+          "terminal_observed_seconds": 0.582886085000041,
+          "end_to_end_seconds": 0.37785970400000224,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "556bf804-d85e-4688-a600-d29aeb65f669",
+          "issued": 0.2192884180000192,
+          "submit_seconds": 0.010460757000032572,
+          "terminal_observed_seconds": 0.5988832730000695,
+          "end_to_end_seconds": 0.3795948550000503,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "320a7260-cfbd-4586-8de0-ca4e1b9c7889",
+          "issued": 0.22975055100005193,
+          "submit_seconds": 0.00968734899993251,
+          "terminal_observed_seconds": 0.6285974590000478,
+          "end_to_end_seconds": 0.3988469079999959,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "ad4d7843-3933-4a27-994b-8bd29bd69a93",
+          "issued": 0.23943897399999514,
+          "submit_seconds": 0.0162338139999747,
+          "terminal_observed_seconds": 0.6337173120000443,
+          "end_to_end_seconds": 0.3942783380000492,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "59b595e8-08b6-4d08-81f0-875c23fd53a7",
+          "issued": 0.25567378100004134,
+          "submit_seconds": 0.010747566999953051,
+          "terminal_observed_seconds": 0.6787263600000415,
+          "end_to_end_seconds": 0.42305257900000015,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        }
+      ],
+      "workers_after": [
+        {
+          "capacity": {
+            "cpu_slots": 2,
+            "memory_mb": 512
+          },
+          "last_heartbeat_at": "2026-10-30T18:08:14.356570Z",
+          "max_concurrent_tasks": 2,
+          "reserved": {
+            "cpu_slots": 0,
+            "memory_mb": 0
+          },
+          "running_attempts": 0,
+          "session_id": "ef0a0f21-9a33-42c8-8c61-eb82bd65f646",
+          "state": "HEALTHY",
+          "worker_id": "local-worker-1"
+        }
+      ],
+      "resources_before": [
+        {
+          "role": "controller",
+          "cpu_ticks": 2,
+          "peak_rss_kib": 17164,
+          "fds": 17,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 0,
+          "peak_rss_kib": 9632,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "resources_after": [
+        {
+          "role": "controller",
+          "cpu_ticks": 13,
+          "peak_rss_kib": 17252,
+          "fds": 17,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 2,
+          "peak_rss_kib": 9636,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "cpu_ticks_during_measurement": [
+        11,
+        2
+      ],
+      "workers": 1,
+      "repetition": 0,
+      "worker_capacity": {
+        "cpu_slots": 2,
+        "memory_mb": 512
+      },
+      "max_concurrent_tasks": 2,
+      "controller_config": {
+        "client_listen": {
+          "address": "127.0.0.1",
+          "port": 56847
+        },
+        "worker_listen": {
+          "address": "127.0.0.1",
+          "port": 44701
+        },
+        "data_dir": "<isolated Linux-local data directory>",
+        "heartbeat": {
+          "interval_ms": 3000,
+          "offline_timeout_ms": 10000
+        },
+        "dispatch": {
+          "ack_timeout_ms": 5000,
+          "start_timeout_ms": 10000
+        },
+        "protocol": {
+          "max_payload_bytes": 4194304
+        },
+        "queues": {
+          "persistence_commands": 4096,
+          "log_bytes": 67108864,
+          "log_commands": 4096,
+          "log_control_reserve": 128,
+          "initial_session_log_window_bytes": 1048576,
+          "initial_session_log_window_chunks": 64
+        },
+        "termination_grace_ms": 200,
+        "logging": {
+          "level": "info",
+          "destination": "stderr"
+        }
+      }
+    },
+    {
+      "workload": "empty",
+      "tasks": 20,
+      "successes": 20,
+      "failures": 0,
+      "bytes_per_stream": 0,
+      "warmup": 2,
+      "elapsed_terminal_seconds": 0.729123712000046,
+      "elapsed_including_verification_seconds": 0.8854358120000825,
+      "terminal_tasks_per_second": 27.43018732052804,
+      "samples": [
+        {
+          "task_id": "901b1407-4015-4c78-934d-ae73b418f6f8",
+          "issued": 1.5470000107598025e-06,
+          "submit_seconds": 0.01243668000006437,
+          "terminal_observed_seconds": 0.29517946500004655,
+          "end_to_end_seconds": 0.2951779180000358,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "2204f1eb-04a5-4324-8e77-4f82dd05eb43",
+          "issued": 0.01244044500003838,
+          "submit_seconds": 0.013692924999986644,
+          "terminal_observed_seconds": 0.31764924500009784,
+          "end_to_end_seconds": 0.30520880000005945,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "2ca7fcff-84a4-4edb-91ce-c3061792dcb6",
+          "issued": 0.02613560600002529,
+          "submit_seconds": 0.019120594000014535,
+          "terminal_observed_seconds": 0.3408030600000984,
+          "end_to_end_seconds": 0.3146674540000731,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "775f2f90-7938-4d86-9981-357313e8b8ec",
+          "issued": 0.04525857100009034,
+          "submit_seconds": 0.0164603599999964,
+          "terminal_observed_seconds": 0.3513850290000846,
+          "end_to_end_seconds": 0.3061264579999943,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "0f0fdbcd-9fab-4baa-ae53-aca93c266e59",
+          "issued": 0.06172251700002107,
+          "submit_seconds": 0.015143019999982243,
+          "terminal_observed_seconds": 0.3747837140000456,
+          "end_to_end_seconds": 0.31306119700002455,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "efb6b571-3cdb-42ca-baaa-9f1df7991e51",
+          "issued": 0.07686874300009094,
+          "submit_seconds": 0.02532918700001119,
+          "terminal_observed_seconds": 0.38898372900007416,
+          "end_to_end_seconds": 0.3121149859999832,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "073eaa8b-3f83-4ae0-8394-18b98212ade1",
+          "issued": 0.10220095100009985,
+          "submit_seconds": 0.017122997000001305,
+          "terminal_observed_seconds": 0.4149848210000755,
+          "end_to_end_seconds": 0.31278386999997565,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "37bcd8c4-4ca9-4406-bd3b-3f062349c108",
+          "issued": 0.1193254470000511,
+          "submit_seconds": 0.009780501000022923,
+          "terminal_observed_seconds": 0.4430238580000605,
+          "end_to_end_seconds": 0.3236984110000094,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "5d31ae71-a48f-45b9-89c2-e5a13d88d99b",
+          "issued": 0.12910755400002927,
+          "submit_seconds": 0.020141648000048917,
+          "terminal_observed_seconds": 0.45972234200007733,
+          "end_to_end_seconds": 0.33061478800004807,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "02094d41-2622-4b72-888b-7596cd34b390",
+          "issued": 0.14925055700007306,
+          "submit_seconds": 0.015814965999993547,
+          "terminal_observed_seconds": 0.4809147920000214,
+          "end_to_end_seconds": 0.33166423499994835,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "2139beaa-cf01-4084-9dc2-7a68472bb1cb",
+          "issued": 0.16506671100000858,
+          "submit_seconds": 0.009694906000049741,
+          "terminal_observed_seconds": 0.5105352520000679,
+          "end_to_end_seconds": 0.3454685410000593,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "c183fca2-a588-4624-97bd-e767045eaed3",
+          "issued": 0.17476880000003803,
+          "submit_seconds": 0.015947694000033152,
+          "terminal_observed_seconds": 0.5409352690001015,
+          "end_to_end_seconds": 0.36616646900006344,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "409d64da-5701-406e-ae1e-2cb283753dc1",
+          "issued": 0.19071796000002905,
+          "submit_seconds": 0.010365534000015941,
+          "terminal_observed_seconds": 0.5641000860000531,
+          "end_to_end_seconds": 0.3733821260000241,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "9fbf0ea6-37d0-4b97-8089-5a564c68c04b",
+          "issued": 0.20108569199999238,
+          "submit_seconds": 0.009635384000034719,
+          "terminal_observed_seconds": 0.590797178999992,
+          "end_to_end_seconds": 0.3897114869999996,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "61572c29-d627-4bc1-b6ff-17b8aaae39a0",
+          "issued": 0.2107225299999982,
+          "submit_seconds": 0.015501605000054042,
+          "terminal_observed_seconds": 0.6082032830000799,
+          "end_to_end_seconds": 0.3974807530000817,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "085f1e25-eedf-42b4-b5ff-0b1661350864",
+          "issued": 0.22622591900005773,
+          "submit_seconds": 0.009858482000026925,
+          "terminal_observed_seconds": 0.6310920480000277,
+          "end_to_end_seconds": 0.40486612899997,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "211b14bc-6cc6-4413-ad5d-162fddbb1477",
+          "issued": 0.2360864130000664,
+          "submit_seconds": 0.009640684000032707,
+          "terminal_observed_seconds": 0.6464375380001002,
+          "end_to_end_seconds": 0.4103511250000338,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "fdb5359b-9d7d-45e0-be22-083870bef9bf",
+          "issued": 0.2457284410000966,
+          "submit_seconds": 0.011073897999949622,
+          "terminal_observed_seconds": 0.6830410990000928,
+          "end_to_end_seconds": 0.4373126579999962,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "e70d237e-25d4-4a20-8b3f-119f5bbea50e",
+          "issued": 0.25680360300009397,
+          "submit_seconds": 0.013954490999935842,
+          "terminal_observed_seconds": 0.6905327110000599,
+          "end_to_end_seconds": 0.4337291079999659,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "d26cf093-c7dd-4c00-ad37-0dc2bdf74ac2",
+          "issued": 0.27075930099999823,
+          "submit_seconds": 0.011640626000030352,
+          "terminal_observed_seconds": 0.7291218789999903,
+          "end_to_end_seconds": 0.458362577999992,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        }
+      ],
+      "workers_after": [
+        {
+          "capacity": {
+            "cpu_slots": 2,
+            "memory_mb": 512
+          },
+          "last_heartbeat_at": "2026-10-30T18:08:15.411324Z",
+          "max_concurrent_tasks": 2,
+          "reserved": {
+            "cpu_slots": 0,
+            "memory_mb": 0
+          },
+          "running_attempts": 0,
+          "session_id": "e30910f1-8d0f-4879-afdf-b24e35cc5a72",
+          "state": "HEALTHY",
+          "worker_id": "local-worker-1"
+        }
+      ],
+      "resources_before": [
+        {
+          "role": "controller",
+          "cpu_ticks": 2,
+          "peak_rss_kib": 17168,
+          "fds": 17,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 0,
+          "peak_rss_kib": 9608,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "resources_after": [
+        {
+          "role": "controller",
+          "cpu_ticks": 18,
+          "peak_rss_kib": 17256,
+          "fds": 17,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 2,
+          "peak_rss_kib": 9612,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "cpu_ticks_during_measurement": [
+        16,
+        2
+      ],
+      "workers": 1,
+      "repetition": 1,
+      "worker_capacity": {
+        "cpu_slots": 2,
+        "memory_mb": 512
+      },
+      "max_concurrent_tasks": 2,
+      "controller_config": {
+        "client_listen": {
+          "address": "127.0.0.1",
+          "port": 50121
+        },
+        "worker_listen": {
+          "address": "127.0.0.1",
+          "port": 51023
+        },
+        "data_dir": "<isolated Linux-local data directory>",
+        "heartbeat": {
+          "interval_ms": 3000,
+          "offline_timeout_ms": 10000
+        },
+        "dispatch": {
+          "ack_timeout_ms": 5000,
+          "start_timeout_ms": 10000
+        },
+        "protocol": {
+          "max_payload_bytes": 4194304
+        },
+        "queues": {
+          "persistence_commands": 4096,
+          "log_bytes": 67108864,
+          "log_commands": 4096,
+          "log_control_reserve": 128,
+          "initial_session_log_window_bytes": 1048576,
+          "initial_session_log_window_chunks": 64
+        },
+        "termination_grace_ms": 200,
+        "logging": {
+          "level": "info",
+          "destination": "stderr"
+        }
+      }
+    },
+    {
+      "workload": "empty",
+      "tasks": 20,
+      "successes": 20,
+      "failures": 0,
+      "bytes_per_stream": 0,
+      "warmup": 2,
+      "elapsed_terminal_seconds": 0.704805360000023,
+      "elapsed_including_verification_seconds": 0.8414453750000348,
+      "terminal_tasks_per_second": 28.376628690791094,
+      "samples": [
+        {
+          "task_id": "d81787fc-4318-46cb-adfb-9a7c9c72be98",
+          "issued": 2.2469999976237887e-06,
+          "submit_seconds": 0.01463101199999528,
+          "terminal_observed_seconds": 0.35789446500007216,
+          "end_to_end_seconds": 0.35789221800007454,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "0ea0f200-6efb-490b-ad3b-0886cc6f7ba2",
+          "issued": 0.014636193000001185,
+          "submit_seconds": 0.013211640999998053,
+          "terminal_observed_seconds": 0.3691571470000099,
+          "end_to_end_seconds": 0.3545209540000087,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "8f26cab7-0fcf-4540-bd29-8f6da4fceb4b",
+          "issued": 0.027850016000002142,
+          "submit_seconds": 0.021132528000066486,
+          "terminal_observed_seconds": 0.3911194440000827,
+          "end_to_end_seconds": 0.36326942800008055,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "62a32e8e-3fd6-4709-a169-70b0d87919b9",
+          "issued": 0.048985084000037205,
+          "submit_seconds": 0.02385995500003446,
+          "terminal_observed_seconds": 0.4100800559999698,
+          "end_to_end_seconds": 0.36109497199993257,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "fe25b5dd-551f-4535-af1f-b92b289dbbdc",
+          "issued": 0.07284677000006923,
+          "submit_seconds": 0.010869439999964925,
+          "terminal_observed_seconds": 0.43438538600003085,
+          "end_to_end_seconds": 0.3615386159999616,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "8f46e58d-c38a-4266-af49-de22988c60fb",
+          "issued": 0.08371780900006343,
+          "submit_seconds": 0.015979817000015828,
+          "terminal_observed_seconds": 0.4513576599999851,
+          "end_to_end_seconds": 0.3676398509999217,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "9e36ec24-b48e-49d3-a5bf-ba11b78bd6b8",
+          "issued": 0.09970016099998702,
+          "submit_seconds": 0.011069116000044232,
+          "terminal_observed_seconds": 0.47396556500007136,
+          "end_to_end_seconds": 0.37426540400008435,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "47103777-6b2f-4c6b-b533-c9798417a2db",
+          "issued": 0.11077094899997064,
+          "submit_seconds": 0.00982170200006749,
+          "terminal_observed_seconds": 0.49036785800001326,
+          "end_to_end_seconds": 0.3795969090000426,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "73088949-a30a-4412-b297-56cef1f1b06c",
+          "issued": 0.12059409400001186,
+          "submit_seconds": 0.01544810799998686,
+          "terminal_observed_seconds": 0.5062651380000034,
+          "end_to_end_seconds": 0.3856710439999915,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "07d35eee-c6d6-4d9c-9fd3-e911c54c09da",
+          "issued": 0.1360444980000466,
+          "submit_seconds": 0.020515627999998287,
+          "terminal_observed_seconds": 0.5266923940000652,
+          "end_to_end_seconds": 0.3906478960000186,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "65e839f5-ff90-4ac9-9085-779ca80744fd",
+          "issued": 0.15656302100001085,
+          "submit_seconds": 0.02540390199999365,
+          "terminal_observed_seconds": 0.5366405470000473,
+          "end_to_end_seconds": 0.3800775260000364,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "aa55e0d6-94d3-42ad-9aa2-232ffcba7fdd",
+          "issued": 0.1819696869999916,
+          "submit_seconds": 0.017481072999999014,
+          "terminal_observed_seconds": 0.5517860690000589,
+          "end_to_end_seconds": 0.3698163820000673,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "b15e6731-84f2-4d63-b5c9-84ee537e7214",
+          "issued": 0.19945409299998573,
+          "submit_seconds": 0.019686702000058176,
+          "terminal_observed_seconds": 0.5716472840000506,
+          "end_to_end_seconds": 0.37219319100006487,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "24cc04a0-cc5b-4fef-818e-a617dac98292",
+          "issued": 0.21914300000003095,
+          "submit_seconds": 0.01691712000001644,
+          "terminal_observed_seconds": 0.5817161620000206,
+          "end_to_end_seconds": 0.3625731619999897,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "0068b68e-7df6-4a10-8aa6-8dabce12a0be",
+          "issued": 0.23606227499999477,
+          "submit_seconds": 0.011871590000055221,
+          "terminal_observed_seconds": 0.6026861290000625,
+          "end_to_end_seconds": 0.3666238540000677,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "36c8b41d-9494-45aa-ae71-cc041d63f8eb",
+          "issued": 0.2479358200000661,
+          "submit_seconds": 0.024147270999947068,
+          "terminal_observed_seconds": 0.6275311320000583,
+          "end_to_end_seconds": 0.3795953119999922,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "0db7f721-86f6-4d24-b208-b5e8672db3b5",
+          "issued": 0.2720853949999764,
+          "submit_seconds": 0.011972165000088353,
+          "terminal_observed_seconds": 0.6548236580000548,
+          "end_to_end_seconds": 0.3827382630000784,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "4b312f87-0755-4d1d-b4bc-677ca328af43",
+          "issued": 0.2840601880000122,
+          "submit_seconds": 0.013409023000008347,
+          "terminal_observed_seconds": 0.6615923840000733,
+          "end_to_end_seconds": 0.37753219600006105,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "be918d7c-1b6f-42cd-aa25-902b1a2cd066",
+          "issued": 0.2974719989999812,
+          "submit_seconds": 0.024886906999995517,
+          "terminal_observed_seconds": 0.6667451420000816,
+          "end_to_end_seconds": 0.3692731430001004,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "92fb986e-8ab8-47e8-b67f-ef6d7d918473",
+          "issued": 0.32236164100004316,
+          "submit_seconds": 0.018372116000023198,
+          "terminal_observed_seconds": 0.7048036250000678,
+          "end_to_end_seconds": 0.3824419840000246,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        }
+      ],
+      "workers_after": [
+        {
+          "capacity": {
+            "cpu_slots": 2,
+            "memory_mb": 512
+          },
+          "last_heartbeat_at": "2026-10-30T18:08:16.555839Z",
+          "max_concurrent_tasks": 2,
+          "reserved": {
+            "cpu_slots": 0,
+            "memory_mb": 0
+          },
+          "running_attempts": 0,
+          "session_id": "e4d5e97d-2100-4b84-85b5-8d607219cd51",
+          "state": "HEALTHY",
+          "worker_id": "local-worker-1"
+        }
+      ],
+      "resources_before": [
+        {
+          "role": "controller",
+          "cpu_ticks": 3,
+          "peak_rss_kib": 17136,
+          "fds": 17,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 0,
+          "peak_rss_kib": 9616,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "resources_after": [
+        {
+          "role": "controller",
+          "cpu_ticks": 16,
+          "peak_rss_kib": 17216,
+          "fds": 17,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 2,
+          "peak_rss_kib": 9620,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "cpu_ticks_during_measurement": [
+        13,
+        2
+      ],
+      "workers": 1,
+      "repetition": 2,
+      "worker_capacity": {
+        "cpu_slots": 2,
+        "memory_mb": 512
+      },
+      "max_concurrent_tasks": 2,
+      "controller_config": {
+        "client_listen": {
+          "address": "127.0.0.1",
+          "port": 57115
+        },
+        "worker_listen": {
+          "address": "127.0.0.1",
+          "port": 53265
+        },
+        "data_dir": "<isolated Linux-local data directory>",
+        "heartbeat": {
+          "interval_ms": 3000,
+          "offline_timeout_ms": 10000
+        },
+        "dispatch": {
+          "ack_timeout_ms": 5000,
+          "start_timeout_ms": 10000
+        },
+        "protocol": {
+          "max_payload_bytes": 4194304
+        },
+        "queues": {
+          "persistence_commands": 4096,
+          "log_bytes": 67108864,
+          "log_commands": 4096,
+          "log_control_reserve": 128,
+          "initial_session_log_window_bytes": 1048576,
+          "initial_session_log_window_chunks": 64
+        },
+        "termination_grace_ms": 200,
+        "logging": {
+          "level": "info",
+          "destination": "stderr"
+        }
+      }
+    },
+    {
+      "workload": "binary",
+      "tasks": 20,
+      "successes": 20,
+      "failures": 0,
+      "bytes_per_stream": 32768,
+      "warmup": 2,
+      "elapsed_terminal_seconds": 0.9916345489999685,
+      "elapsed_including_verification_seconds": 1.159704875999978,
+      "terminal_tasks_per_second": 20.16872044259587,
+      "samples": [
+        {
+          "task_id": "313e4f8b-36b3-4479-b4fd-05d2a593c173",
+          "issued": 1.2560000186567777e-06,
+          "submit_seconds": 0.00985577899996315,
+          "terminal_observed_seconds": 0.2583844790000285,
+          "end_to_end_seconds": 0.2583832230000098,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "760743cc-64ac-47cb-a32a-602ffb3d83c3",
+          "issued": 0.009858650999944985,
+          "submit_seconds": 0.011244635000025482,
+          "terminal_observed_seconds": 0.2701798670000244,
+          "end_to_end_seconds": 0.2603212160000794,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "a7759b40-04d0-418d-8372-eeb7be6b578c",
+          "issued": 0.021105349999970713,
+          "submit_seconds": 0.017716199999995297,
+          "terminal_observed_seconds": 0.2732420480000428,
+          "end_to_end_seconds": 0.2521366980000721,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "e5c55f60-8b2a-4514-8fd2-d23ee5cb7090",
+          "issued": 0.03882306200000585,
+          "submit_seconds": 0.00980413000002045,
+          "terminal_observed_seconds": 0.2762145619999501,
+          "end_to_end_seconds": 0.23739149999994424,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "e2b5f877-92f4-4965-bd8f-8f874f33b7e4",
+          "issued": 0.048628196999970896,
+          "submit_seconds": 0.007807356000057553,
+          "terminal_observed_seconds": 0.31128650699997706,
+          "end_to_end_seconds": 0.26265831000000617,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "8305659a-a022-4f27-bfb7-2a6b63951e9d",
+          "issued": 0.05643678199999158,
+          "submit_seconds": 0.012049147999960041,
+          "terminal_observed_seconds": 0.31495093000000907,
+          "end_to_end_seconds": 0.2585141480000175,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "bb7ba06e-608c-4b48-be64-147193ab9c44",
+          "issued": 0.06848743399996238,
+          "submit_seconds": 0.017087032000063118,
+          "terminal_observed_seconds": 0.412125289999949,
+          "end_to_end_seconds": 0.34363785599998664,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "f05b969a-926f-4b64-8271-45c7c96cd7ae",
+          "issued": 0.08557564199998069,
+          "submit_seconds": 0.013153180000017528,
+          "terminal_observed_seconds": 0.4161396980000518,
+          "end_to_end_seconds": 0.3305640560000711,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "74d24b50-6db5-47a7-92d2-8c2af51e4de8",
+          "issued": 0.09873063899999579,
+          "submit_seconds": 0.013050177999957668,
+          "terminal_observed_seconds": 0.4967916929999774,
+          "end_to_end_seconds": 0.3980610539999816,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "f0de0ce1-d89f-46a9-af01-ed9090b9b905",
+          "issued": 0.11180171199998767,
+          "submit_seconds": 0.009817335999969146,
+          "terminal_observed_seconds": 0.5001607140000033,
+          "end_to_end_seconds": 0.3883590020000156,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "208e3df0-1a01-4154-860f-d748bf4398fd",
+          "issued": 0.12162089900004958,
+          "submit_seconds": 0.010141378999946937,
+          "terminal_observed_seconds": 0.5845465529999956,
+          "end_to_end_seconds": 0.462925653999946,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "93aa6a83-472a-4871-aeb6-a4d35d412ce2",
+          "issued": 0.13176374399995439,
+          "submit_seconds": 0.012938075000079152,
+          "terminal_observed_seconds": 0.5896059929999637,
+          "end_to_end_seconds": 0.45784224900000936,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "de9bde52-3148-4981-b0e9-95cd6d3f5c46",
+          "issued": 0.14470283299999664,
+          "submit_seconds": 0.0076471480000464,
+          "terminal_observed_seconds": 0.684944961000042,
+          "end_to_end_seconds": 0.5402421280000453,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "67875b48-d6f7-4fe4-82c7-b91b2c8d911b",
+          "issued": 0.15235101300004317,
+          "submit_seconds": 0.008169124999994892,
+          "terminal_observed_seconds": 0.6891045679999479,
+          "end_to_end_seconds": 0.5367535549999047,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "e4f1f813-f055-4ec6-b3e5-8590f7ea4f45",
+          "issued": 0.16052147599998534,
+          "submit_seconds": 0.01818612400006714,
+          "terminal_observed_seconds": 0.7806278010000369,
+          "end_to_end_seconds": 0.6201063250000516,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "9b229f05-60e7-4a5c-9cb1-9da3ffea1bb3",
+          "issued": 0.17870886000002884,
+          "submit_seconds": 0.020128547000012986,
+          "terminal_observed_seconds": 0.784474183000043,
+          "end_to_end_seconds": 0.6057653230000142,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "1ee5701a-3b15-4bbf-9459-97552f117749",
+          "issued": 0.19883896600003936,
+          "submit_seconds": 0.014863757999933114,
+          "terminal_observed_seconds": 0.8634431079999558,
+          "end_to_end_seconds": 0.6646041419999165,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "0aec2411-3cc4-456a-89d8-e3def550c30e",
+          "issued": 0.21370390499998848,
+          "submit_seconds": 0.014861530999951356,
+          "terminal_observed_seconds": 0.8695042099999455,
+          "end_to_end_seconds": 0.655800304999957,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "10d1f096-682d-45e7-a98e-d66470610968",
+          "issued": 0.22856707100004314,
+          "submit_seconds": 0.016979403999926035,
+          "terminal_observed_seconds": 0.985457475999965,
+          "end_to_end_seconds": 0.7568904049999219,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "45ac9ece-fdd9-46ed-9b60-db0397a5a320",
+          "issued": 0.2455476349999799,
+          "submit_seconds": 0.009828193999965151,
+          "terminal_observed_seconds": 0.9916326459999709,
+          "end_to_end_seconds": 0.746085010999991,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        }
+      ],
+      "workers_after": [
+        {
+          "capacity": {
+            "cpu_slots": 2,
+            "memory_mb": 512
+          },
+          "last_heartbeat_at": "2026-10-30T18:08:17.677934Z",
+          "max_concurrent_tasks": 2,
+          "reserved": {
+            "cpu_slots": 0,
+            "memory_mb": 0
+          },
+          "running_attempts": 0,
+          "session_id": "0b4ef8f4-a40a-4379-9897-2b28a161a076",
+          "state": "HEALTHY",
+          "worker_id": "local-worker-1"
+        }
+      ],
+      "resources_before": [
+        {
+          "role": "controller",
+          "cpu_ticks": 2,
+          "peak_rss_kib": 21404,
+          "fds": 17,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 0,
+          "peak_rss_kib": 9832,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "resources_after": [
+        {
+          "role": "controller",
+          "cpu_ticks": 20,
+          "peak_rss_kib": 21436,
+          "fds": 17,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 3,
+          "peak_rss_kib": 9832,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "cpu_ticks_during_measurement": [
+        18,
+        3
+      ],
+      "workers": 1,
+      "repetition": 0,
+      "worker_capacity": {
+        "cpu_slots": 2,
+        "memory_mb": 512
+      },
+      "max_concurrent_tasks": 2,
+      "controller_config": {
+        "client_listen": {
+          "address": "127.0.0.1",
+          "port": 39723
+        },
+        "worker_listen": {
+          "address": "127.0.0.1",
+          "port": 38661
+        },
+        "data_dir": "<isolated Linux-local data directory>",
+        "heartbeat": {
+          "interval_ms": 3000,
+          "offline_timeout_ms": 10000
+        },
+        "dispatch": {
+          "ack_timeout_ms": 5000,
+          "start_timeout_ms": 10000
+        },
+        "protocol": {
+          "max_payload_bytes": 4194304
+        },
+        "queues": {
+          "persistence_commands": 4096,
+          "log_bytes": 67108864,
+          "log_commands": 4096,
+          "log_control_reserve": 128,
+          "initial_session_log_window_bytes": 1048576,
+          "initial_session_log_window_chunks": 64
+        },
+        "termination_grace_ms": 200,
+        "logging": {
+          "level": "info",
+          "destination": "stderr"
+        }
+      }
+    },
+    {
+      "workload": "binary",
+      "tasks": 20,
+      "successes": 20,
+      "failures": 0,
+      "bytes_per_stream": 32768,
+      "warmup": 2,
+      "elapsed_terminal_seconds": 1.0243388490000598,
+      "elapsed_including_verification_seconds": 1.1891881850000345,
+      "terminal_tasks_per_second": 19.524789106186514,
+      "samples": [
+        {
+          "task_id": "7976e4c4-ad79-4c67-a090-9b1f345ed67c",
+          "issued": 1.2850000530306716e-06,
+          "submit_seconds": 0.011158263999959672,
+          "terminal_observed_seconds": 0.25902815400002055,
+          "end_to_end_seconds": 0.2590268689999675,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "3a7af939-5a55-4421-ae5b-181093b0bd77",
+          "issued": 0.01116189700007908,
+          "submit_seconds": 0.013339998999981617,
+          "terminal_observed_seconds": 0.26228037900000345,
+          "end_to_end_seconds": 0.25111848199992437,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "def1dfb0-74d7-4b78-8d2e-41ec637c7331",
+          "issued": 0.024503764000087358,
+          "submit_seconds": 0.01624970000000303,
+          "terminal_observed_seconds": 0.2654740950000587,
+          "end_to_end_seconds": 0.24097033099997134,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "e0d7099e-fd30-4145-95eb-2c5954f3a7ba",
+          "issued": 0.040754671000058806,
+          "submit_seconds": 0.010042925999982799,
+          "terminal_observed_seconds": 0.2684579210000493,
+          "end_to_end_seconds": 0.22770324999999048,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "3060a493-c7c1-4ac8-a30a-5f4893d27d74",
+          "issued": 0.050798751000002085,
+          "submit_seconds": 0.007725000000050386,
+          "terminal_observed_seconds": 0.3319991050000226,
+          "end_to_end_seconds": 0.2812003540000205,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "dac5d8b4-2237-47ce-a94e-51380173ee0a",
+          "issued": 0.05852463100006844,
+          "submit_seconds": 0.008044380000001183,
+          "terminal_observed_seconds": 0.3389134680001007,
+          "end_to_end_seconds": 0.28038883700003225,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "bbb90f4d-1db6-4b78-bfa4-3d18fb393821",
+          "issued": 0.0665703060000169,
+          "submit_seconds": 0.01830482100001518,
+          "terminal_observed_seconds": 0.43129285800000616,
+          "end_to_end_seconds": 0.36472255199998926,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "e7f3c2a0-02a7-4c91-89ba-e5efd9033f91",
+          "issued": 0.08487700400007725,
+          "submit_seconds": 0.008934672999998838,
+          "terminal_observed_seconds": 0.4361448410001003,
+          "end_to_end_seconds": 0.35126783700002306,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "562762e3-5dbc-43e7-be92-671c1d382800",
+          "issued": 0.0938132090000181,
+          "submit_seconds": 0.018829224000000977,
+          "terminal_observed_seconds": 0.5339579300000423,
+          "end_to_end_seconds": 0.4401447210000242,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "2502b5dd-0435-4dd3-9608-03dedb99291d",
+          "issued": 0.11264460200004578,
+          "submit_seconds": 0.016682099000036033,
+          "terminal_observed_seconds": 0.5387614560000884,
+          "end_to_end_seconds": 0.4261168540000426,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "b7218908-8356-4e86-b6e9-eefe80dba909",
+          "issued": 0.12932841700001063,
+          "submit_seconds": 0.010697899000092548,
+          "terminal_observed_seconds": 0.6365061830000514,
+          "end_to_end_seconds": 0.5071777660000407,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "d7fffd05-6a78-4e87-9c7f-d4faa267a1b9",
+          "issued": 0.14002813300010075,
+          "submit_seconds": 0.011837569999897823,
+          "terminal_observed_seconds": 0.6493617750001022,
+          "end_to_end_seconds": 0.5093336420000014,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "2ddda177-57a4-41fc-83fe-8cc918afde85",
+          "issued": 0.15186699800005954,
+          "submit_seconds": 0.007744233000039458,
+          "terminal_observed_seconds": 0.7390614420000929,
+          "end_to_end_seconds": 0.5871944440000334,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "4410cf7e-ecd3-453c-9229-b753e40b6bef",
+          "issued": 0.1596123000000489,
+          "submit_seconds": 0.007988985999986653,
+          "terminal_observed_seconds": 0.7468264230000159,
+          "end_to_end_seconds": 0.587214122999967,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "94810cac-bead-4b04-a767-a49246d31d65",
+          "issued": 0.16760226600001715,
+          "submit_seconds": 0.008001729000056912,
+          "terminal_observed_seconds": 0.8308942910000496,
+          "end_to_end_seconds": 0.6632920250000325,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "b4cd2286-22b8-4b2e-8e5a-a0586608a4e3",
+          "issued": 0.17560507600001074,
+          "submit_seconds": 0.018532183000047553,
+          "terminal_observed_seconds": 0.8369783240000288,
+          "end_to_end_seconds": 0.6613732480000181,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "5a641846-8af4-4b49-b448-a6c88195ce66",
+          "issued": 0.19413883200002147,
+          "submit_seconds": 0.01397869200002333,
+          "terminal_observed_seconds": 0.949198501000069,
+          "end_to_end_seconds": 0.7550596690000475,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "c7483cad-51ab-4bdd-b0b7-660d24e34ea8",
+          "issued": 0.20811950300003446,
+          "submit_seconds": 0.01605376800000613,
+          "terminal_observed_seconds": 0.9543318650000856,
+          "end_to_end_seconds": 0.7462123620000511,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "4d3b90ec-fea2-444d-b13d-ddbcc8dd3a42",
+          "issued": 0.22417543400001705,
+          "submit_seconds": 0.017460461000041505,
+          "terminal_observed_seconds": 1.0182810400000335,
+          "end_to_end_seconds": 0.7941056060000165,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "d4c00daa-4804-4778-af6a-23401ae2e775",
+          "issued": 0.2416382410000324,
+          "submit_seconds": 0.012301825000008648,
+          "terminal_observed_seconds": 1.0243377190000729,
+          "end_to_end_seconds": 0.7826994780000405,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        }
+      ],
+      "workers_after": [
+        {
+          "capacity": {
+            "cpu_slots": 2,
+            "memory_mb": 512
+          },
+          "last_heartbeat_at": "2026-10-30T18:08:19.129050Z",
+          "max_concurrent_tasks": 2,
+          "reserved": {
+            "cpu_slots": 0,
+            "memory_mb": 0
+          },
+          "running_attempts": 0,
+          "session_id": "ba485c6a-8715-4dc6-9cc5-cac83dc2f56b",
+          "state": "HEALTHY",
+          "worker_id": "local-worker-1"
+        }
+      ],
+      "resources_before": [
+        {
+          "role": "controller",
+          "cpu_ticks": 2,
+          "peak_rss_kib": 17316,
+          "fds": 17,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 0,
+          "peak_rss_kib": 9844,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "resources_after": [
+        {
+          "role": "controller",
+          "cpu_ticks": 22,
+          "peak_rss_kib": 21508,
+          "fds": 17,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 3,
+          "peak_rss_kib": 9844,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "cpu_ticks_during_measurement": [
+        20,
+        3
+      ],
+      "workers": 1,
+      "repetition": 1,
+      "worker_capacity": {
+        "cpu_slots": 2,
+        "memory_mb": 512
+      },
+      "max_concurrent_tasks": 2,
+      "controller_config": {
+        "client_listen": {
+          "address": "127.0.0.1",
+          "port": 50177
+        },
+        "worker_listen": {
+          "address": "127.0.0.1",
+          "port": 44741
+        },
+        "data_dir": "<isolated Linux-local data directory>",
+        "heartbeat": {
+          "interval_ms": 3000,
+          "offline_timeout_ms": 10000
+        },
+        "dispatch": {
+          "ack_timeout_ms": 5000,
+          "start_timeout_ms": 10000
+        },
+        "protocol": {
+          "max_payload_bytes": 4194304
+        },
+        "queues": {
+          "persistence_commands": 4096,
+          "log_bytes": 67108864,
+          "log_commands": 4096,
+          "log_control_reserve": 128,
+          "initial_session_log_window_bytes": 1048576,
+          "initial_session_log_window_chunks": 64
+        },
+        "termination_grace_ms": 200,
+        "logging": {
+          "level": "info",
+          "destination": "stderr"
+        }
+      }
+    },
+    {
+      "workload": "binary",
+      "tasks": 20,
+      "successes": 20,
+      "failures": 0,
+      "bytes_per_stream": 32768,
+      "warmup": 2,
+      "elapsed_terminal_seconds": 1.0647966450000013,
+      "elapsed_including_verification_seconds": 1.2248248700000204,
+      "terminal_tasks_per_second": 18.7829292042895,
+      "samples": [
+        {
+          "task_id": "3198cad2-2fa7-4fdd-8f4e-76c167c5756c",
+          "issued": 1.1029999313905137e-06,
+          "submit_seconds": 0.010434276000069076,
+          "terminal_observed_seconds": 0.2834454689999575,
+          "end_to_end_seconds": 0.2834443660000261,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "8f152d58-775b-44e0-ae08-8607ae7d146e",
+          "issued": 0.01043675500000063,
+          "submit_seconds": 0.011562724999976126,
+          "terminal_observed_seconds": 0.28962781300003826,
+          "end_to_end_seconds": 0.27919105800003763,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "eae5ee0a-6543-4943-a8d6-670fbaf4c592",
+          "issued": 0.022000942999966355,
+          "submit_seconds": 0.015865464000057727,
+          "terminal_observed_seconds": 0.2958955980000155,
+          "end_to_end_seconds": 0.27389465500004917,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "cfa31e17-70ce-4f9d-90ec-01916094e7da",
+          "issued": 0.03786742800002685,
+          "submit_seconds": 0.007994084999950246,
+          "terminal_observed_seconds": 0.3095474919999788,
+          "end_to_end_seconds": 0.2716800639999519,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "177584e4-0e61-4b5e-b894-b878a6de6cb4",
+          "issued": 0.04586282000002484,
+          "submit_seconds": 0.00889365499995165,
+          "terminal_observed_seconds": 0.328444850999972,
+          "end_to_end_seconds": 0.28258203099994716,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "eef5dd3c-2654-4912-a22a-589a524710b9",
+          "issued": 0.054757580000000416,
+          "submit_seconds": 0.009122818000037114,
+          "terminal_observed_seconds": 0.36165649099996244,
+          "end_to_end_seconds": 0.306898910999962,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "1db0c5ff-0dfb-4502-8a49-73570da963b3",
+          "issued": 0.0638815300000033,
+          "submit_seconds": 0.016198545999941416,
+          "terminal_observed_seconds": 0.4574920290000364,
+          "end_to_end_seconds": 0.3936104990000331,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "5c1ad4c1-3525-4a4f-b257-b34ae9bef7ce",
+          "issued": 0.08008140100002947,
+          "submit_seconds": 0.013283202999900823,
+          "terminal_observed_seconds": 0.4628795439999749,
+          "end_to_end_seconds": 0.3827981429999454,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "0ab9f2da-45ca-40e2-b5df-0f27636c171c",
+          "issued": 0.09336634099997809,
+          "submit_seconds": 0.016941212999995514,
+          "terminal_observed_seconds": 0.5548923269999477,
+          "end_to_end_seconds": 0.46152598599996963,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "9214e015-63f4-43b9-9e99-5be7641268ec",
+          "issued": 0.11030943399998705,
+          "submit_seconds": 0.010668185999975321,
+          "terminal_observed_seconds": 0.5600233220000064,
+          "end_to_end_seconds": 0.4497138880000193,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "f6d0d0a5-56cd-4d4b-b610-5bf836395298",
+          "issued": 0.12097876999996515,
+          "submit_seconds": 0.013739486000076795,
+          "terminal_observed_seconds": 0.6518682659999513,
+          "end_to_end_seconds": 0.5308894959999861,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "55f53827-3242-4734-99af-985dc702b2ca",
+          "issued": 0.13472142900002382,
+          "submit_seconds": 0.012715334999938932,
+          "terminal_observed_seconds": 0.6558651479999753,
+          "end_to_end_seconds": 0.5211437189999515,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "eaed1980-4d23-48d1-ab75-2fde8062e9cf",
+          "issued": 0.14743866399999206,
+          "submit_seconds": 0.008389979999947172,
+          "terminal_observed_seconds": 0.7579730549999795,
+          "end_to_end_seconds": 0.6105343909999874,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "c35f15d0-4b06-4de2-90dc-d9b4295e774c",
+          "issued": 0.1558296439999367,
+          "submit_seconds": 0.009349860000043009,
+          "terminal_observed_seconds": 0.7638477579999972,
+          "end_to_end_seconds": 0.6080181140000605,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "055e6ce8-53f2-4f92-9a2a-f764f40f3f54",
+          "issued": 0.16518042500001684,
+          "submit_seconds": 0.014863332999993872,
+          "terminal_observed_seconds": 0.8815177579999727,
+          "end_to_end_seconds": 0.7163373329999558,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "034e3294-a5e7-4df2-87dd-1dac0809b798",
+          "issued": 0.18004541100003735,
+          "submit_seconds": 0.018374493999999686,
+          "terminal_observed_seconds": 0.8849924490000376,
+          "end_to_end_seconds": 0.7049470380000002,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "eed90aa5-fcc4-42e8-b594-4afff4c5a391",
+          "issued": 0.19842171100003725,
+          "submit_seconds": 0.023142680999967524,
+          "terminal_observed_seconds": 0.9759375820000287,
+          "end_to_end_seconds": 0.7775158709999914,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "b24d9959-d9ff-40b4-a35d-24b08cb385cb",
+          "issued": 0.22156750099998135,
+          "submit_seconds": 0.02011060899997119,
+          "terminal_observed_seconds": 0.9809868349999533,
+          "end_to_end_seconds": 0.759419333999972,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "bebc9d37-227e-437b-8a57-8068bd7c4658",
+          "issued": 0.24168006599995806,
+          "submit_seconds": 0.020220732999973734,
+          "terminal_observed_seconds": 1.060782646000007,
+          "end_to_end_seconds": 0.8191025800000489,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "ffbadfe8-6c06-4781-b0b2-967ff2a85623",
+          "issued": 0.26190268799996375,
+          "submit_seconds": 0.014203544999986661,
+          "terminal_observed_seconds": 1.064795242999935,
+          "end_to_end_seconds": 0.8028925549999713,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        }
+      ],
+      "workers_after": [
+        {
+          "capacity": {
+            "cpu_slots": 2,
+            "memory_mb": 512
+          },
+          "last_heartbeat_at": "2026-10-30T18:08:20.610905Z",
+          "max_concurrent_tasks": 2,
+          "reserved": {
+            "cpu_slots": 0,
+            "memory_mb": 0
+          },
+          "running_attempts": 0,
+          "session_id": "ca795f73-88bc-46db-9255-38042d00cf17",
+          "state": "HEALTHY",
+          "worker_id": "local-worker-1"
+        }
+      ],
+      "resources_before": [
+        {
+          "role": "controller",
+          "cpu_ticks": 3,
+          "peak_rss_kib": 17292,
+          "fds": 17,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 1,
+          "peak_rss_kib": 9804,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "resources_after": [
+        {
+          "role": "controller",
+          "cpu_ticks": 21,
+          "peak_rss_kib": 21488,
+          "fds": 17,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 4,
+          "peak_rss_kib": 9804,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "cpu_ticks_during_measurement": [
+        18,
+        3
+      ],
+      "workers": 1,
+      "repetition": 2,
+      "worker_capacity": {
+        "cpu_slots": 2,
+        "memory_mb": 512
+      },
+      "max_concurrent_tasks": 2,
+      "controller_config": {
+        "client_listen": {
+          "address": "127.0.0.1",
+          "port": 35707
+        },
+        "worker_listen": {
+          "address": "127.0.0.1",
+          "port": 48765
+        },
+        "data_dir": "<isolated Linux-local data directory>",
+        "heartbeat": {
+          "interval_ms": 3000,
+          "offline_timeout_ms": 10000
+        },
+        "dispatch": {
+          "ack_timeout_ms": 5000,
+          "start_timeout_ms": 10000
+        },
+        "protocol": {
+          "max_payload_bytes": 4194304
+        },
+        "queues": {
+          "persistence_commands": 4096,
+          "log_bytes": 67108864,
+          "log_commands": 4096,
+          "log_control_reserve": 128,
+          "initial_session_log_window_bytes": 1048576,
+          "initial_session_log_window_chunks": 64
+        },
+        "termination_grace_ms": 200,
+        "logging": {
+          "level": "info",
+          "destination": "stderr"
+        }
+      }
+    },
+    {
+      "workload": "empty",
+      "tasks": 20,
+      "successes": 20,
+      "failures": 0,
+      "bytes_per_stream": 0,
+      "warmup": 2,
+      "elapsed_terminal_seconds": 0.8129717100000562,
+      "elapsed_including_verification_seconds": 0.9474060550001013,
+      "terminal_tasks_per_second": 24.601102048186423,
+      "samples": [
+        {
+          "task_id": "b3a06729-27ce-416b-9c9c-df17e710d46e",
+          "issued": 1.0940000265691197e-06,
+          "submit_seconds": 0.010453509000058148,
+          "terminal_observed_seconds": 0.7161189310000964,
+          "end_to_end_seconds": 0.7161178370000698,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "a89be44f-34be-4d7a-a164-f561585289da",
+          "issued": 0.01045645700003206,
+          "submit_seconds": 0.013111217000073339,
+          "terminal_observed_seconds": 0.745208997000077,
+          "end_to_end_seconds": 0.734752540000045,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "c64c4db7-be80-4d5c-ad7f-fad5c5d15435",
+          "issued": 0.02356994800004486,
+          "submit_seconds": 0.0201327360000505,
+          "terminal_observed_seconds": 0.7519473430000971,
+          "end_to_end_seconds": 0.7283773950000523,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "65453bce-53ae-4add-994b-1a710262bacf",
+          "issued": 0.04370495000000574,
+          "submit_seconds": 0.015721202000008816,
+          "terminal_observed_seconds": 0.7575969790000272,
+          "end_to_end_seconds": 0.7138920290000215,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "2f7e9161-fab7-4745-82a5-4eef69b36953",
+          "issued": 0.05942735700000412,
+          "submit_seconds": 0.035775314000034086,
+          "terminal_observed_seconds": 0.7632534620000797,
+          "end_to_end_seconds": 0.7038261050000756,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "eb4474e6-2509-4e10-a7bc-aebeaeed45fc",
+          "issued": 0.09520434300009128,
+          "submit_seconds": 0.034462748000009924,
+          "terminal_observed_seconds": 0.7668821390000176,
+          "end_to_end_seconds": 0.6716777959999263,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "59919542-e2e3-40ad-8eab-4a02db6379b7",
+          "issued": 0.12966942500008827,
+          "submit_seconds": 0.02953179399992223,
+          "terminal_observed_seconds": 0.7702787350000335,
+          "end_to_end_seconds": 0.6406093099999453,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "60c17396-0aaa-4526-bfca-d35f2bc12332",
+          "issued": 0.15920278300006885,
+          "submit_seconds": 0.03656959099998858,
+          "terminal_observed_seconds": 0.7733880610001052,
+          "end_to_end_seconds": 0.6141852780000363,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "a1150470-30b9-4c89-8cf2-76da811eee02",
+          "issued": 0.19577481700002863,
+          "submit_seconds": 0.03286272800005463,
+          "terminal_observed_seconds": 0.7782541779999974,
+          "end_to_end_seconds": 0.5824793609999688,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "a5cfcafc-cebe-4504-b4c3-bb358242f008",
+          "issued": 0.22863941200000681,
+          "submit_seconds": 0.029389807000029577,
+          "terminal_observed_seconds": 0.7820354740000539,
+          "end_to_end_seconds": 0.5533960620000471,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "2240f2e4-f7a9-4838-9fcd-589be9e7e939",
+          "issued": 0.25803206099999443,
+          "submit_seconds": 0.046452595000005203,
+          "terminal_observed_seconds": 0.7851081250000789,
+          "end_to_end_seconds": 0.5270760640000844,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "b025a14d-3403-45f1-ae04-8fb6340b9f6b",
+          "issued": 0.3044861829999945,
+          "submit_seconds": 0.033734102000039456,
+          "terminal_observed_seconds": 0.7880402580000236,
+          "end_to_end_seconds": 0.4835540750000291,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "f5c39854-bc37-488a-bf39-b457e546b3fb",
+          "issued": 0.33822171700001036,
+          "submit_seconds": 0.02843459600001097,
+          "terminal_observed_seconds": 0.7910185279999951,
+          "end_to_end_seconds": 0.4527968109999847,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "3140c11b-ab7b-4e6b-b276-5fa01613f48f",
+          "issued": 0.36665852100009033,
+          "submit_seconds": 0.03541486599999644,
+          "terminal_observed_seconds": 0.7941736600000695,
+          "end_to_end_seconds": 0.42751513899997917,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "d0ca6ee7-65d1-4a15-833e-436482ae181e",
+          "issued": 0.4020758770000157,
+          "submit_seconds": 0.03859720399998423,
+          "terminal_observed_seconds": 0.7974758790001033,
+          "end_to_end_seconds": 0.3954000020000876,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "95d4dac7-b61e-425b-b8ed-83a4d8e8e73a",
+          "issued": 0.44067541900005835,
+          "submit_seconds": 0.03953227700003481,
+          "terminal_observed_seconds": 0.8008008240000208,
+          "end_to_end_seconds": 0.3601254049999625,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "60ecead4-493e-4063-85cd-264d0a3fbb03",
+          "issued": 0.4802102010000908,
+          "submit_seconds": 0.032798904999935985,
+          "terminal_observed_seconds": 0.8039496800000734,
+          "end_to_end_seconds": 0.32373947899998257,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "c347b134-0307-433e-94f8-392e09cea515",
+          "issued": 0.513010232000056,
+          "submit_seconds": 0.038304470999946716,
+          "terminal_observed_seconds": 0.8068690610000431,
+          "end_to_end_seconds": 0.29385882899998705,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "1aae98fe-24f8-46ce-a8d1-db24b05454b1",
+          "issued": 0.551317741000048,
+          "submit_seconds": 0.04565117200002078,
+          "terminal_observed_seconds": 0.8100025160000541,
+          "end_to_end_seconds": 0.2586847750000061,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "0bf93941-21d5-465c-ba11-e09b8ed050e9",
+          "issued": 0.5969712500000242,
+          "submit_seconds": 0.039278245999980754,
+          "terminal_observed_seconds": 0.8129708129999926,
+          "end_to_end_seconds": 0.21599956299996848,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        }
+      ],
+      "workers_after": [
+        {
+          "capacity": {
+            "cpu_slots": 2,
+            "memory_mb": 512
+          },
+          "last_heartbeat_at": "2026-10-30T18:08:22.171576Z",
+          "max_concurrent_tasks": 2,
+          "reserved": {
+            "cpu_slots": 0,
+            "memory_mb": 0
+          },
+          "running_attempts": 0,
+          "session_id": "9d254b3c-8e1a-4268-9828-1df5567ba62e",
+          "state": "HEALTHY",
+          "worker_id": "local-worker-1"
+        },
+        {
+          "capacity": {
+            "cpu_slots": 2,
+            "memory_mb": 512
+          },
+          "last_heartbeat_at": "2026-10-30T18:08:22.171576Z",
+          "max_concurrent_tasks": 2,
+          "reserved": {
+            "cpu_slots": 0,
+            "memory_mb": 0
+          },
+          "running_attempts": 0,
+          "session_id": "b174453c-6a94-4b2b-be8a-74d06cef6c77",
+          "state": "HEALTHY",
+          "worker_id": "local-worker-2"
+        }
+      ],
+      "resources_before": [
+        {
+          "role": "controller",
+          "cpu_ticks": 3,
+          "peak_rss_kib": 21208,
+          "fds": 18,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 0,
+          "peak_rss_kib": 9632,
+          "fds": 9,
+          "threads": 1
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 0,
+          "peak_rss_kib": 9544,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "resources_after": [
+        {
+          "role": "controller",
+          "cpu_ticks": 17,
+          "peak_rss_kib": 21292,
+          "fds": 18,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 1,
+          "peak_rss_kib": 9632,
+          "fds": 9,
+          "threads": 1
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 1,
+          "peak_rss_kib": 9568,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "cpu_ticks_during_measurement": [
+        14,
+        1,
+        1
+      ],
+      "workers": 2,
+      "repetition": 0,
+      "worker_capacity": {
+        "cpu_slots": 2,
+        "memory_mb": 512
+      },
+      "max_concurrent_tasks": 2,
+      "controller_config": {
+        "client_listen": {
+          "address": "127.0.0.1",
+          "port": 51011
+        },
+        "worker_listen": {
+          "address": "127.0.0.1",
+          "port": 58527
+        },
+        "data_dir": "<isolated Linux-local data directory>",
+        "heartbeat": {
+          "interval_ms": 3000,
+          "offline_timeout_ms": 10000
+        },
+        "dispatch": {
+          "ack_timeout_ms": 5000,
+          "start_timeout_ms": 10000
+        },
+        "protocol": {
+          "max_payload_bytes": 4194304
+        },
+        "queues": {
+          "persistence_commands": 4096,
+          "log_bytes": 67108864,
+          "log_commands": 4096,
+          "log_control_reserve": 128,
+          "initial_session_log_window_bytes": 1048576,
+          "initial_session_log_window_chunks": 64
+        },
+        "termination_grace_ms": 200,
+        "logging": {
+          "level": "info",
+          "destination": "stderr"
+        }
+      }
+    },
+    {
+      "workload": "empty",
+      "tasks": 20,
+      "successes": 20,
+      "failures": 0,
+      "bytes_per_stream": 0,
+      "warmup": 2,
+      "elapsed_terminal_seconds": 0.78878573399993,
+      "elapsed_including_verification_seconds": 0.9250653450000073,
+      "terminal_tasks_per_second": 25.355428144700415,
+      "samples": [
+        {
+          "task_id": "ff94364b-8794-4599-adfc-cfa27375141b",
+          "issued": 1.7219999790540896e-06,
+          "submit_seconds": 0.013216424000006555,
+          "terminal_observed_seconds": 0.6728321059999871,
+          "end_to_end_seconds": 0.672830384000008,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "73797d67-6f68-4c37-a0dc-fdfad600996c",
+          "issued": 0.01322070599997005,
+          "submit_seconds": 0.01449753999997938,
+          "terminal_observed_seconds": 0.7219160559999409,
+          "end_to_end_seconds": 0.7086953499999709,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "3e37fe66-eb22-4e9d-9563-a1333db0198a",
+          "issued": 0.027721544999963044,
+          "submit_seconds": 0.01696433300003264,
+          "terminal_observed_seconds": 0.729827630999921,
+          "end_to_end_seconds": 0.7021060859999579,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "5baaf9dd-291b-43b9-bd77-015b66ccf326",
+          "issued": 0.04468737299998793,
+          "submit_seconds": 0.030246677999912208,
+          "terminal_observed_seconds": 0.7370501819999618,
+          "end_to_end_seconds": 0.6923628089999738,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "cbb8ab75-a0d8-4c9c-9dfe-ad8a44a1d9db",
+          "issued": 0.07493639899996651,
+          "submit_seconds": 0.030016711000030227,
+          "terminal_observed_seconds": 0.7415611449999915,
+          "end_to_end_seconds": 0.666624746000025,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "a8d38b84-b46f-4d3e-b32e-14bc54425e68",
+          "issued": 0.10495573599996533,
+          "submit_seconds": 0.03155810600003406,
+          "terminal_observed_seconds": 0.744988803999945,
+          "end_to_end_seconds": 0.6400330679999797,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "e271b28b-4bf9-4a27-9b5d-885e94c6208a",
+          "issued": 0.13651612499995736,
+          "submit_seconds": 0.025947365999968497,
+          "terminal_observed_seconds": 0.7483727149999595,
+          "end_to_end_seconds": 0.6118565900000021,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "01138b43-168d-4f1c-bc20-501e0b8df526",
+          "issued": 0.16246531100000539,
+          "submit_seconds": 0.026584098999933303,
+          "terminal_observed_seconds": 0.752021850999995,
+          "end_to_end_seconds": 0.5895565399999896,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "039067be-6385-4971-a3e0-ff2a8122838c",
+          "issued": 0.18905170199991517,
+          "submit_seconds": 0.024931397000045763,
+          "terminal_observed_seconds": 0.7550752489999013,
+          "end_to_end_seconds": 0.5660235469999861,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "7f4372ba-fb01-45ac-99a5-92b276f9fe8e",
+          "issued": 0.21398590899991632,
+          "submit_seconds": 0.03299960100002863,
+          "terminal_observed_seconds": 0.7581657409999707,
+          "end_to_end_seconds": 0.5441798320000544,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "3aae993b-0db7-4a8d-b41b-0a99659224fc",
+          "issued": 0.24698802599993996,
+          "submit_seconds": 0.03709200299999793,
+          "terminal_observed_seconds": 0.7610442289999355,
+          "end_to_end_seconds": 0.5140562029999955,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "da4a9099-6ddb-43cb-8e8b-984dd26659bf",
+          "issued": 0.2840827109999964,
+          "submit_seconds": 0.030262441999980183,
+          "terminal_observed_seconds": 0.7639678399999639,
+          "end_to_end_seconds": 0.4798851289999675,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "6b003244-6aad-4b2f-99e3-dc924b0f19ea",
+          "issued": 0.3143481739999743,
+          "submit_seconds": 0.04714809300003253,
+          "terminal_observed_seconds": 0.7674572079999962,
+          "end_to_end_seconds": 0.4531090340000219,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "c78eab6c-0b27-4be0-a832-553de216c291",
+          "issued": 0.36149980599998344,
+          "submit_seconds": 0.034769750999998905,
+          "terminal_observed_seconds": 0.7705644569999777,
+          "end_to_end_seconds": 0.40906465099999423,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "beaa815e-0667-4392-9656-f7cffa1e06f6",
+          "issued": 0.3962726449999536,
+          "submit_seconds": 0.04351497200002541,
+          "terminal_observed_seconds": 0.7735357249999879,
+          "end_to_end_seconds": 0.3772630800000343,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "675d4251-4575-4f9b-817b-dccf7b291f81",
+          "issued": 0.4397907419999001,
+          "submit_seconds": 0.03333099100007075,
+          "terminal_observed_seconds": 0.7764170379999769,
+          "end_to_end_seconds": 0.33662629600007676,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "392156fc-593f-4fa6-9a2d-664cd46c3677",
+          "issued": 0.47312450099991565,
+          "submit_seconds": 0.032896874000016396,
+          "terminal_observed_seconds": 0.779278827999974,
+          "end_to_end_seconds": 0.3061543270000584,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "3e9f4627-5837-44e2-ae32-2794428bdac3",
+          "issued": 0.5060238349999509,
+          "submit_seconds": 0.030827179999960208,
+          "terminal_observed_seconds": 0.7822534129999212,
+          "end_to_end_seconds": 0.2762295779999704,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "ce926276-cafe-41ff-95e7-8a2a9f06ce64",
+          "issued": 0.5368527419999509,
+          "submit_seconds": 0.03119780899999114,
+          "terminal_observed_seconds": 0.785636267999962,
+          "end_to_end_seconds": 0.24878352600001108,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "d2a6ed08-0d56-432c-84db-15e62872ee0a",
+          "issued": 0.5680538340000112,
+          "submit_seconds": 0.02924627999993845,
+          "terminal_observed_seconds": 0.7887849809999352,
+          "end_to_end_seconds": 0.22073114699992402,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        }
+      ],
+      "workers_after": [
+        {
+          "capacity": {
+            "cpu_slots": 2,
+            "memory_mb": 512
+          },
+          "last_heartbeat_at": "2026-10-30T18:08:23.377856Z",
+          "max_concurrent_tasks": 2,
+          "reserved": {
+            "cpu_slots": 0,
+            "memory_mb": 0
+          },
+          "running_attempts": 0,
+          "session_id": "cb3f2ce2-8fec-48cf-b2fa-b0eab1a4239b",
+          "state": "HEALTHY",
+          "worker_id": "local-worker-1"
+        },
+        {
+          "capacity": {
+            "cpu_slots": 2,
+            "memory_mb": 512
+          },
+          "last_heartbeat_at": "2026-10-30T18:08:23.377856Z",
+          "max_concurrent_tasks": 2,
+          "reserved": {
+            "cpu_slots": 0,
+            "memory_mb": 0
+          },
+          "running_attempts": 0,
+          "session_id": "f7440ade-38da-4f57-917c-af7a1600134e",
+          "state": "HEALTHY",
+          "worker_id": "local-worker-2"
+        }
+      ],
+      "resources_before": [
+        {
+          "role": "controller",
+          "cpu_ticks": 3,
+          "peak_rss_kib": 21228,
+          "fds": 18,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 0,
+          "peak_rss_kib": 9580,
+          "fds": 9,
+          "threads": 1
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 0,
+          "peak_rss_kib": 9592,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "resources_after": [
+        {
+          "role": "controller",
+          "cpu_ticks": 18,
+          "peak_rss_kib": 21312,
+          "fds": 18,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 1,
+          "peak_rss_kib": 9580,
+          "fds": 9,
+          "threads": 1
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 1,
+          "peak_rss_kib": 9616,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "cpu_ticks_during_measurement": [
+        15,
+        1,
+        1
+      ],
+      "workers": 2,
+      "repetition": 1,
+      "worker_capacity": {
+        "cpu_slots": 2,
+        "memory_mb": 512
+      },
+      "max_concurrent_tasks": 2,
+      "controller_config": {
+        "client_listen": {
+          "address": "127.0.0.1",
+          "port": 37383
+        },
+        "worker_listen": {
+          "address": "127.0.0.1",
+          "port": 47863
+        },
+        "data_dir": "<isolated Linux-local data directory>",
+        "heartbeat": {
+          "interval_ms": 3000,
+          "offline_timeout_ms": 10000
+        },
+        "dispatch": {
+          "ack_timeout_ms": 5000,
+          "start_timeout_ms": 10000
+        },
+        "protocol": {
+          "max_payload_bytes": 4194304
+        },
+        "queues": {
+          "persistence_commands": 4096,
+          "log_bytes": 67108864,
+          "log_commands": 4096,
+          "log_control_reserve": 128,
+          "initial_session_log_window_bytes": 1048576,
+          "initial_session_log_window_chunks": 64
+        },
+        "termination_grace_ms": 200,
+        "logging": {
+          "level": "info",
+          "destination": "stderr"
+        }
+      }
+    },
+    {
+      "workload": "empty",
+      "tasks": 20,
+      "successes": 20,
+      "failures": 0,
+      "bytes_per_stream": 0,
+      "warmup": 2,
+      "elapsed_terminal_seconds": 0.7727703920000977,
+      "elapsed_including_verification_seconds": 0.9092542910000248,
+      "terminal_tasks_per_second": 25.8809087499272,
+      "samples": [
+        {
+          "task_id": "abca13fa-8aea-4e15-8bf2-9c6bc1c17ee7",
+          "issued": 7.060000370984199e-07,
+          "submit_seconds": 0.011320482999963133,
+          "terminal_observed_seconds": 0.6992846510000845,
+          "end_to_end_seconds": 0.6992839450000474,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "1b676bbf-12fe-4da3-bf14-f9ce36f6fbea",
+          "issued": 0.011322976000087692,
+          "submit_seconds": 0.010610188999976344,
+          "terminal_observed_seconds": 0.7120566450000752,
+          "end_to_end_seconds": 0.7007336689999875,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "d36dc9b5-33ed-4a81-926f-8bd7aa1dd1a6",
+          "issued": 0.021934468000040397,
+          "submit_seconds": 0.015857722999953694,
+          "terminal_observed_seconds": 0.7163756480000529,
+          "end_to_end_seconds": 0.6944411800000125,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "7bec4163-48f5-4782-9fad-d3715bb5ba7a",
+          "issued": 0.037793704000023354,
+          "submit_seconds": 0.01791242800004511,
+          "terminal_observed_seconds": 0.7206982780000999,
+          "end_to_end_seconds": 0.6829045740000765,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "fd1e0f02-3419-443b-b9bd-87684249b1d0",
+          "issued": 0.05570751300001575,
+          "submit_seconds": 0.033638907000067775,
+          "terminal_observed_seconds": 0.723832256000037,
+          "end_to_end_seconds": 0.6681247430000212,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "4332217c-9cb5-489c-8bcf-907a30914b30",
+          "issued": 0.0893486820000362,
+          "submit_seconds": 0.04409823699995741,
+          "terminal_observed_seconds": 0.7278108070000826,
+          "end_to_end_seconds": 0.6384621250000464,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "02088a24-0d27-4785-b8a2-1d7e5810dad3",
+          "issued": 0.1334493620000785,
+          "submit_seconds": 0.037296989999958896,
+          "terminal_observed_seconds": 0.7320799139999963,
+          "end_to_end_seconds": 0.5986305519999178,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "00d310be-8a9f-48f8-9057-601b72e74dd4",
+          "issued": 0.17074916800004303,
+          "submit_seconds": 0.0501240889999508,
+          "terminal_observed_seconds": 0.7360337450000998,
+          "end_to_end_seconds": 0.5652845770000567,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "8f991054-683f-45be-a7fa-7442fafc1e6b",
+          "issued": 0.22087623600009465,
+          "submit_seconds": 0.0396420559999342,
+          "terminal_observed_seconds": 0.7396213690000195,
+          "end_to_end_seconds": 0.5187451329999249,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "409a9764-5362-44c5-a3b4-2d4383825a20",
+          "issued": 0.26052066700003707,
+          "submit_seconds": 0.030236550000040552,
+          "terminal_observed_seconds": 0.7427649070000371,
+          "end_to_end_seconds": 0.48224424,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "7225a9b9-a031-4b9a-9992-7b1e5addb487",
+          "issued": 0.29075880900006723,
+          "submit_seconds": 0.028009126000029028,
+          "terminal_observed_seconds": 0.745703122000009,
+          "end_to_end_seconds": 0.45494431299994176,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "680ceb0c-0a64-48fd-b147-ec2f1720dc96",
+          "issued": 0.31876930000009907,
+          "submit_seconds": 0.031091444999901796,
+          "terminal_observed_seconds": 0.7490084500000194,
+          "end_to_end_seconds": 0.4302391499999203,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "9aa207ac-1382-43db-8046-3c9e80860fa4",
+          "issued": 0.34986218700009886,
+          "submit_seconds": 0.025142799999912313,
+          "terminal_observed_seconds": 0.7521876510000993,
+          "end_to_end_seconds": 0.40232546400000047,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "1f3a551b-6bef-4119-ab00-270e1846a7b5",
+          "issued": 0.37500661600006424,
+          "submit_seconds": 0.04156905199999983,
+          "terminal_observed_seconds": 0.7552456720000009,
+          "end_to_end_seconds": 0.3802390559999367,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "4b905a0e-bac1-4664-bb13-f16197e8c89a",
+          "issued": 0.4165785690000803,
+          "submit_seconds": 0.033882721999930254,
+          "terminal_observed_seconds": 0.7582248120000941,
+          "end_to_end_seconds": 0.3416462430000138,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "abcf15a5-7f9e-4d28-9fbb-9790ac818b30",
+          "issued": 0.4504638860000796,
+          "submit_seconds": 0.03663085799996679,
+          "terminal_observed_seconds": 0.7611563970000361,
+          "end_to_end_seconds": 0.31069251099995654,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "23ba4782-a2b2-4a67-a796-b84461e92057",
+          "issued": 0.48709820800002035,
+          "submit_seconds": 0.039671820000080515,
+          "terminal_observed_seconds": 0.7640383100000463,
+          "end_to_end_seconds": 0.27694010200002595,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "5874cc2a-5b98-4703-b5b9-35e58ed75744",
+          "issued": 0.5267728310000166,
+          "submit_seconds": 0.04329555399999663,
+          "terminal_observed_seconds": 0.766896877000022,
+          "end_to_end_seconds": 0.24012404600000536,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "5e42a907-b2b7-4371-a44a-e334ad4f49e7",
+          "issued": 0.5700713230000929,
+          "submit_seconds": 0.03996300799997243,
+          "terminal_observed_seconds": 0.7697154930000352,
+          "end_to_end_seconds": 0.19964416999994228,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "task_id": "472670fe-4d08-495f-b21f-0a5f9ba93bf0",
+          "issued": 0.6100362230000655,
+          "submit_seconds": 0.028997699000001376,
+          "terminal_observed_seconds": 0.7727695270000368,
+          "end_to_end_seconds": 0.1627333039999712,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        }
+      ],
+      "workers_after": [
+        {
+          "capacity": {
+            "cpu_slots": 2,
+            "memory_mb": 512
+          },
+          "last_heartbeat_at": "2026-10-30T18:08:24.602586Z",
+          "max_concurrent_tasks": 2,
+          "reserved": {
+            "cpu_slots": 0,
+            "memory_mb": 0
+          },
+          "running_attempts": 0,
+          "session_id": "1f965789-99f8-40df-9acb-c87a968aa3d5",
+          "state": "HEALTHY",
+          "worker_id": "local-worker-1"
+        },
+        {
+          "capacity": {
+            "cpu_slots": 2,
+            "memory_mb": 512
+          },
+          "last_heartbeat_at": "2026-10-30T18:08:24.602586Z",
+          "max_concurrent_tasks": 2,
+          "reserved": {
+            "cpu_slots": 0,
+            "memory_mb": 0
+          },
+          "running_attempts": 0,
+          "session_id": "ec3168d5-7e19-40d7-bc5d-25543817b5fa",
+          "state": "HEALTHY",
+          "worker_id": "local-worker-2"
+        }
+      ],
+      "resources_before": [
+        {
+          "role": "controller",
+          "cpu_ticks": 3,
+          "peak_rss_kib": 21280,
+          "fds": 18,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 0,
+          "peak_rss_kib": 9588,
+          "fds": 9,
+          "threads": 1
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 0,
+          "peak_rss_kib": 9592,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "resources_after": [
+        {
+          "role": "controller",
+          "cpu_ticks": 16,
+          "peak_rss_kib": 21360,
+          "fds": 18,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 1,
+          "peak_rss_kib": 9588,
+          "fds": 9,
+          "threads": 1
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 1,
+          "peak_rss_kib": 9616,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "cpu_ticks_during_measurement": [
+        13,
+        1,
+        1
+      ],
+      "workers": 2,
+      "repetition": 2,
+      "worker_capacity": {
+        "cpu_slots": 2,
+        "memory_mb": 512
+      },
+      "max_concurrent_tasks": 2,
+      "controller_config": {
+        "client_listen": {
+          "address": "127.0.0.1",
+          "port": 36239
+        },
+        "worker_listen": {
+          "address": "127.0.0.1",
+          "port": 49299
+        },
+        "data_dir": "<isolated Linux-local data directory>",
+        "heartbeat": {
+          "interval_ms": 3000,
+          "offline_timeout_ms": 10000
+        },
+        "dispatch": {
+          "ack_timeout_ms": 5000,
+          "start_timeout_ms": 10000
+        },
+        "protocol": {
+          "max_payload_bytes": 4194304
+        },
+        "queues": {
+          "persistence_commands": 4096,
+          "log_bytes": 67108864,
+          "log_commands": 4096,
+          "log_control_reserve": 128,
+          "initial_session_log_window_bytes": 1048576,
+          "initial_session_log_window_chunks": 64
+        },
+        "termination_grace_ms": 200,
+        "logging": {
+          "level": "info",
+          "destination": "stderr"
+        }
+      }
+    },
+    {
+      "workload": "binary",
+      "tasks": 20,
+      "successes": 20,
+      "failures": 0,
+      "bytes_per_stream": 32768,
+      "warmup": 2,
+      "elapsed_terminal_seconds": 0.7366494819999616,
+      "elapsed_including_verification_seconds": 0.902230220999968,
+      "terminal_tasks_per_second": 27.14995461030005,
+      "samples": [
+        {
+          "task_id": "4ff4d077-918d-4e74-a6d7-50eea349fcca",
+          "issued": 1.351000037175254e-06,
+          "submit_seconds": 0.009501419999992322,
+          "terminal_observed_seconds": 0.4879425159999755,
+          "end_to_end_seconds": 0.48794116499993834,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "78a81a37-74e3-4488-9648-2dc59e352d0c",
+          "issued": 0.009504594999953042,
+          "submit_seconds": 0.009691305000046668,
+          "terminal_observed_seconds": 0.5347176789999821,
+          "end_to_end_seconds": 0.5252130840000291,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "9f343a28-1fd7-4982-a5d6-6f4a8e9825c8",
+          "issued": 0.01919703400005801,
+          "submit_seconds": 0.010352324999985285,
+          "terminal_observed_seconds": 0.5674105650000456,
+          "end_to_end_seconds": 0.5482135309999876,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "daaa1182-9a86-427f-a6ec-6d7632a24c4d",
+          "issued": 0.02955086300005405,
+          "submit_seconds": 0.019817735999936303,
+          "terminal_observed_seconds": 0.5783840479999753,
+          "end_to_end_seconds": 0.5488331849999213,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "9075a9f0-6787-4f2e-987d-f3fe39c082b9",
+          "issued": 0.04936956400001691,
+          "submit_seconds": 0.027954531999967003,
+          "terminal_observed_seconds": 0.5827088830000093,
+          "end_to_end_seconds": 0.5333393189999924,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "1d1a3f32-059e-4506-b8c4-20635998d9ea",
+          "issued": 0.07732531199997084,
+          "submit_seconds": 0.018910229000084655,
+          "terminal_observed_seconds": 0.5859569870000314,
+          "end_to_end_seconds": 0.5086316750000606,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "43300f9a-6767-40fa-a4e6-8a0ae99e013a",
+          "issued": 0.0962367690000292,
+          "submit_seconds": 0.021090123000021777,
+          "terminal_observed_seconds": 0.5890847750000603,
+          "end_to_end_seconds": 0.4928480060000311,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "5a3ac4f9-b6ec-415e-b451-37d8348a7726",
+          "issued": 0.11732869100001153,
+          "submit_seconds": 0.024808448000044336,
+          "terminal_observed_seconds": 0.5921134799999663,
+          "end_to_end_seconds": 0.4747847889999548,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "7d3bca0b-6d85-4be6-9a1a-2e2bb19918c0",
+          "issued": 0.14213827100002163,
+          "submit_seconds": 0.019101029000012204,
+          "terminal_observed_seconds": 0.613783910000052,
+          "end_to_end_seconds": 0.4716456390000303,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "8b0e9ec6-f357-430c-9b55-6801d3c6ad94",
+          "issued": 0.16124056600006043,
+          "submit_seconds": 0.029003156999920066,
+          "terminal_observed_seconds": 0.6278532229999882,
+          "end_to_end_seconds": 0.4666126569999278,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "f012b0b2-6cea-4530-a1b9-7bbecb72e2f1",
+          "issued": 0.19024481099995683,
+          "submit_seconds": 0.029303964000064298,
+          "terminal_observed_seconds": 0.6478290720000359,
+          "end_to_end_seconds": 0.4575842610000791,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "ce411d0f-e224-4105-bb7c-c53087cee8de",
+          "issued": 0.21955021500002658,
+          "submit_seconds": 0.029193164999924193,
+          "terminal_observed_seconds": 0.654027186999997,
+          "end_to_end_seconds": 0.4344769719999704,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "de34da51-7f52-40fe-906c-e3d92319c7e4",
+          "issued": 0.2487454299999854,
+          "submit_seconds": 0.025362437000012505,
+          "terminal_observed_seconds": 0.6583534960000179,
+          "end_to_end_seconds": 0.4096080660000325,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "2fa02b2e-3fac-4bf8-bcc3-1ff46ec59a3d",
+          "issued": 0.2741088000000218,
+          "submit_seconds": 0.023118291999935536,
+          "terminal_observed_seconds": 0.661975898000037,
+          "end_to_end_seconds": 0.3878670980000152,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "851f801e-d14d-4f98-9564-6598afd9fba9",
+          "issued": 0.29722822099995483,
+          "submit_seconds": 0.021959170000059203,
+          "terminal_observed_seconds": 0.6654703179999615,
+          "end_to_end_seconds": 0.36824209700000665,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "efb3a316-5649-4635-a35c-557b9bd16265",
+          "issued": 0.31918883000003007,
+          "submit_seconds": 0.023903452000013203,
+          "terminal_observed_seconds": 0.670068375000028,
+          "end_to_end_seconds": 0.35087954499999796,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "48d8931a-2083-4b37-9dd7-4c91565ab3f7",
+          "issued": 0.3430938660000038,
+          "submit_seconds": 0.02708328400001392,
+          "terminal_observed_seconds": 0.6731314520000069,
+          "end_to_end_seconds": 0.3300375860000031,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "d1788b75-2650-4107-bc0b-4362baca5be6",
+          "issued": 0.3701783259999729,
+          "submit_seconds": 0.028077252000002773,
+          "terminal_observed_seconds": 0.6760726100000056,
+          "end_to_end_seconds": 0.3058942840000327,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "3ac81127-128e-41b4-bcf9-89ac2e69fe78",
+          "issued": 0.3982569820000208,
+          "submit_seconds": 0.022693436999929872,
+          "terminal_observed_seconds": 0.6789416190000566,
+          "end_to_end_seconds": 0.28068463700003576,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "dda315f0-8da0-4ae6-a547-8e9306fea2a4",
+          "issued": 0.42095175700001164,
+          "submit_seconds": 0.020609981000006883,
+          "terminal_observed_seconds": 0.7366474340000195,
+          "end_to_end_seconds": 0.3156956770000079,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        }
+      ],
+      "workers_after": [
+        {
+          "capacity": {
+            "cpu_slots": 2,
+            "memory_mb": 512
+          },
+          "last_heartbeat_at": "2026-10-30T18:08:25.798028Z",
+          "max_concurrent_tasks": 2,
+          "reserved": {
+            "cpu_slots": 0,
+            "memory_mb": 0
+          },
+          "running_attempts": 0,
+          "session_id": "f81e9e44-65bd-4fbc-8d1d-7448a1db0de5",
+          "state": "HEALTHY",
+          "worker_id": "local-worker-1"
+        },
+        {
+          "capacity": {
+            "cpu_slots": 2,
+            "memory_mb": 512
+          },
+          "last_heartbeat_at": "2026-10-30T18:08:25.798028Z",
+          "max_concurrent_tasks": 2,
+          "reserved": {
+            "cpu_slots": 0,
+            "memory_mb": 0
+          },
+          "running_attempts": 0,
+          "session_id": "9ef71088-4f9e-470f-bc0d-f19c7f1e4af1",
+          "state": "HEALTHY",
+          "worker_id": "local-worker-2"
+        }
+      ],
+      "resources_before": [
+        {
+          "role": "controller",
+          "cpu_ticks": 3,
+          "peak_rss_kib": 21416,
+          "fds": 18,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 0,
+          "peak_rss_kib": 9804,
+          "fds": 9,
+          "threads": 1
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 0,
+          "peak_rss_kib": 9580,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "resources_after": [
+        {
+          "role": "controller",
+          "cpu_ticks": 18,
+          "peak_rss_kib": 21892,
+          "fds": 18,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 2,
+          "peak_rss_kib": 9804,
+          "fds": 9,
+          "threads": 1
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 2,
+          "peak_rss_kib": 9836,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "cpu_ticks_during_measurement": [
+        15,
+        2,
+        2
+      ],
+      "workers": 2,
+      "repetition": 0,
+      "worker_capacity": {
+        "cpu_slots": 2,
+        "memory_mb": 512
+      },
+      "max_concurrent_tasks": 2,
+      "controller_config": {
+        "client_listen": {
+          "address": "127.0.0.1",
+          "port": 52441
+        },
+        "worker_listen": {
+          "address": "127.0.0.1",
+          "port": 54429
+        },
+        "data_dir": "<isolated Linux-local data directory>",
+        "heartbeat": {
+          "interval_ms": 3000,
+          "offline_timeout_ms": 10000
+        },
+        "dispatch": {
+          "ack_timeout_ms": 5000,
+          "start_timeout_ms": 10000
+        },
+        "protocol": {
+          "max_payload_bytes": 4194304
+        },
+        "queues": {
+          "persistence_commands": 4096,
+          "log_bytes": 67108864,
+          "log_commands": 4096,
+          "log_control_reserve": 128,
+          "initial_session_log_window_bytes": 1048576,
+          "initial_session_log_window_chunks": 64
+        },
+        "termination_grace_ms": 200,
+        "logging": {
+          "level": "info",
+          "destination": "stderr"
+        }
+      }
+    },
+    {
+      "workload": "binary",
+      "tasks": 20,
+      "successes": 20,
+      "failures": 0,
+      "bytes_per_stream": 32768,
+      "warmup": 2,
+      "elapsed_terminal_seconds": 0.7247692349999397,
+      "elapsed_including_verification_seconds": 0.8901165899999341,
+      "terminal_tasks_per_second": 27.59499028680717,
+      "samples": [
+        {
+          "task_id": "25a15fcf-23ce-47c6-bc65-5a99e18fa7be",
+          "issued": 1.5749999420222593e-06,
+          "submit_seconds": 0.012453806000053191,
+          "terminal_observed_seconds": 0.574411605000023,
+          "end_to_end_seconds": 0.574410030000081,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "7f8ee74b-4f32-4850-a7db-4f757dea114a",
+          "issued": 0.012458741999921585,
+          "submit_seconds": 0.012513262000084069,
+          "terminal_observed_seconds": 0.6055972880000127,
+          "end_to_end_seconds": 0.5931385460000911,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "e8889377-8aee-4100-9feb-056067db8c1a",
+          "issued": 0.02497406299994509,
+          "submit_seconds": 0.022237795000023652,
+          "terminal_observed_seconds": 0.6326539419999335,
+          "end_to_end_seconds": 0.6076798789999884,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "6bad53f7-5fc3-4df9-acd6-a63a8b333677",
+          "issued": 0.04721488199993473,
+          "submit_seconds": 0.01790054000002783,
+          "terminal_observed_seconds": 0.6567999999999756,
+          "end_to_end_seconds": 0.6095851180000409,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "6bf28e0a-70f3-46d2-acc0-0e1253bbb834",
+          "issued": 0.06511657800001558,
+          "submit_seconds": 0.025234532000013132,
+          "terminal_observed_seconds": 0.6612249290000136,
+          "end_to_end_seconds": 0.596108350999998,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "eab1b3ed-4b83-426f-9877-c0706b892ebb",
+          "issued": 0.09035238900003151,
+          "submit_seconds": 0.02430345999994188,
+          "terminal_observed_seconds": 0.6653464769999573,
+          "end_to_end_seconds": 0.5749940879999258,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "fdba87fb-6b37-444a-a3de-27a5367f76d3",
+          "issued": 0.1146574879999207,
+          "submit_seconds": 0.02677020100009031,
+          "terminal_observed_seconds": 0.674864929000023,
+          "end_to_end_seconds": 0.5602074410001023,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "0f33b942-93bd-4333-b2cc-7f6fae2a3b2e",
+          "issued": 0.14142884599993977,
+          "submit_seconds": 0.03194656800008033,
+          "terminal_observed_seconds": 0.6839379609999696,
+          "end_to_end_seconds": 0.5425091150000299,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "f5406eaa-06af-4dd0-ab9e-3064d702089b",
+          "issued": 0.17337650699994356,
+          "submit_seconds": 0.02010598000003938,
+          "terminal_observed_seconds": 0.6878924359999701,
+          "end_to_end_seconds": 0.5145159290000265,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "9892ac4c-6be4-416f-a189-7913daa2e26c",
+          "issued": 0.19348378899996987,
+          "submit_seconds": 0.02005599300002814,
+          "terminal_observed_seconds": 0.6911855869999499,
+          "end_to_end_seconds": 0.49770179799998004,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "e4060e1e-57f5-4c41-8471-032ccd3b1fde",
+          "issued": 0.21354072899998755,
+          "submit_seconds": 0.030008345999931407,
+          "terminal_observed_seconds": 0.6942612010000175,
+          "end_to_end_seconds": 0.48072047200003,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "093417da-bf18-4e78-8d9d-23dc8d81832c",
+          "issued": 0.2435504929999297,
+          "submit_seconds": 0.03231546000006347,
+          "terminal_observed_seconds": 0.6976998899999671,
+          "end_to_end_seconds": 0.4541493970000374,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "516c3c63-53dd-47d0-8efe-84bd76855baa",
+          "issued": 0.2758679049999273,
+          "submit_seconds": 0.02872374100002162,
+          "terminal_observed_seconds": 0.7007067419999657,
+          "end_to_end_seconds": 0.42483883700003844,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "036e160c-159f-4b92-8448-1ef4adbe4fc3",
+          "issued": 0.30459314500001256,
+          "submit_seconds": 0.020783804999950917,
+          "terminal_observed_seconds": 0.7035794610000039,
+          "end_to_end_seconds": 0.39898631599999135,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "3066909a-20b6-4c2c-83e0-0c4cf0dbff8a",
+          "issued": 0.325378096999998,
+          "submit_seconds": 0.020084993999944345,
+          "terminal_observed_seconds": 0.7064965629999733,
+          "end_to_end_seconds": 0.38111846599997534,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "a0119761-2172-4b38-8c32-c58266a0b28b",
+          "issued": 0.3454644089999874,
+          "submit_seconds": 0.021191099000020586,
+          "terminal_observed_seconds": 0.7098551709999583,
+          "end_to_end_seconds": 0.3643907619999709,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "9a99ccc4-a211-4355-8cdd-1a72b7b7e633",
+          "issued": 0.36665703699998176,
+          "submit_seconds": 0.034239038000009714,
+          "terminal_observed_seconds": 0.7150495949999822,
+          "end_to_end_seconds": 0.34839255800000046,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "dbdfc687-58ee-43dd-9cfc-3fb39defc872",
+          "issued": 0.40089812799999436,
+          "submit_seconds": 0.04015254399996593,
+          "terminal_observed_seconds": 0.7184070380000094,
+          "end_to_end_seconds": 0.317508910000015,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "1bc05710-4bef-4bad-a4e8-a7e116742dea",
+          "issued": 0.44105335199992624,
+          "submit_seconds": 0.031881351000038194,
+          "terminal_observed_seconds": 0.7217327249999244,
+          "end_to_end_seconds": 0.2806793729999981,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "d4424aae-1a9a-4479-b667-c94ef3e0c932",
+          "issued": 0.47293663300001754,
+          "submit_seconds": 0.03146878799998376,
+          "terminal_observed_seconds": 0.7247682910000321,
+          "end_to_end_seconds": 0.2518316580000146,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        }
+      ],
+      "workers_after": [
+        {
+          "capacity": {
+            "cpu_slots": 2,
+            "memory_mb": 512
+          },
+          "last_heartbeat_at": "2026-10-30T18:08:27.015875Z",
+          "max_concurrent_tasks": 2,
+          "reserved": {
+            "cpu_slots": 0,
+            "memory_mb": 0
+          },
+          "running_attempts": 0,
+          "session_id": "9fd06f55-da15-4f9c-b4ed-a7a14b086308",
+          "state": "HEALTHY",
+          "worker_id": "local-worker-1"
+        },
+        {
+          "capacity": {
+            "cpu_slots": 2,
+            "memory_mb": 512
+          },
+          "last_heartbeat_at": "2026-10-30T18:08:27.015875Z",
+          "max_concurrent_tasks": 2,
+          "reserved": {
+            "cpu_slots": 0,
+            "memory_mb": 0
+          },
+          "running_attempts": 0,
+          "session_id": "0cd23679-a849-42a5-8335-46c81d8c038d",
+          "state": "HEALTHY",
+          "worker_id": "local-worker-2"
+        }
+      ],
+      "resources_before": [
+        {
+          "role": "controller",
+          "cpu_ticks": 3,
+          "peak_rss_kib": 21452,
+          "fds": 18,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 1,
+          "peak_rss_kib": 9860,
+          "fds": 9,
+          "threads": 1
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 0,
+          "peak_rss_kib": 9608,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "resources_after": [
+        {
+          "role": "controller",
+          "cpu_ticks": 17,
+          "peak_rss_kib": 21912,
+          "fds": 18,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 2,
+          "peak_rss_kib": 9860,
+          "fds": 9,
+          "threads": 1
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 1,
+          "peak_rss_kib": 9864,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "cpu_ticks_during_measurement": [
+        14,
+        1,
+        1
+      ],
+      "workers": 2,
+      "repetition": 1,
+      "worker_capacity": {
+        "cpu_slots": 2,
+        "memory_mb": 512
+      },
+      "max_concurrent_tasks": 2,
+      "controller_config": {
+        "client_listen": {
+          "address": "127.0.0.1",
+          "port": 55473
+        },
+        "worker_listen": {
+          "address": "127.0.0.1",
+          "port": 52351
+        },
+        "data_dir": "<isolated Linux-local data directory>",
+        "heartbeat": {
+          "interval_ms": 3000,
+          "offline_timeout_ms": 10000
+        },
+        "dispatch": {
+          "ack_timeout_ms": 5000,
+          "start_timeout_ms": 10000
+        },
+        "protocol": {
+          "max_payload_bytes": 4194304
+        },
+        "queues": {
+          "persistence_commands": 4096,
+          "log_bytes": 67108864,
+          "log_commands": 4096,
+          "log_control_reserve": 128,
+          "initial_session_log_window_bytes": 1048576,
+          "initial_session_log_window_chunks": 64
+        },
+        "termination_grace_ms": 200,
+        "logging": {
+          "level": "info",
+          "destination": "stderr"
+        }
+      }
+    },
+    {
+      "workload": "binary",
+      "tasks": 20,
+      "successes": 20,
+      "failures": 0,
+      "bytes_per_stream": 32768,
+      "warmup": 2,
+      "elapsed_terminal_seconds": 0.7160769500000015,
+      "elapsed_including_verification_seconds": 0.8732499550000057,
+      "terminal_tasks_per_second": 27.92995920340678,
+      "samples": [
+        {
+          "task_id": "336afd5b-6cf5-436c-8449-251f93b06fbe",
+          "issued": 8.859999525157036e-07,
+          "submit_seconds": 0.009853367000005164,
+          "terminal_observed_seconds": 0.5631816499999331,
+          "end_to_end_seconds": 0.5631807639999806,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "1545f8ce-c701-4714-98f1-5e41bbfe3bfb",
+          "issued": 0.009857312999997703,
+          "submit_seconds": 0.013145092999934604,
+          "terminal_observed_seconds": 0.6110868189999792,
+          "end_to_end_seconds": 0.6012295059999815,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "a64b7732-85e0-440f-8815-82eb061bc54f",
+          "issued": 0.02300396800001181,
+          "submit_seconds": 0.015750051999930292,
+          "terminal_observed_seconds": 0.6556147899999587,
+          "end_to_end_seconds": 0.6326108219999469,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "8f7c0c8f-63ec-4831-b342-42bedc45e00d",
+          "issued": 0.0387551279999343,
+          "submit_seconds": 0.01812835400005497,
+          "terminal_observed_seconds": 0.6644749099999672,
+          "end_to_end_seconds": 0.6257197820000329,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "8109f8b8-a0bc-4cfd-b7a4-db8f88829efd",
+          "issued": 0.05688477799992597,
+          "submit_seconds": 0.03293116000008922,
+          "terminal_observed_seconds": 0.6681689710000001,
+          "end_to_end_seconds": 0.6112841930000741,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "9d0393ed-6a17-4a45-80a6-9d7c88fd7e28",
+          "issued": 0.08981767199998103,
+          "submit_seconds": 0.030969163000008848,
+          "terminal_observed_seconds": 0.6717037390000087,
+          "end_to_end_seconds": 0.5818860670000277,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "556eab7b-5bc9-4903-8944-3d002ae2989f",
+          "issued": 0.12078810699995302,
+          "submit_seconds": 0.028373186000067108,
+          "terminal_observed_seconds": 0.6748683289999917,
+          "end_to_end_seconds": 0.5540802220000387,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "e983fa44-5bbb-4d3f-8a9f-c98eff71940f",
+          "issued": 0.14916298799994365,
+          "submit_seconds": 0.021104626000010285,
+          "terminal_observed_seconds": 0.6779689290000306,
+          "end_to_end_seconds": 0.5288059410000869,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "35f38d2d-cc18-4523-8eb6-3ab65664f046",
+          "issued": 0.17026931299994885,
+          "submit_seconds": 0.01581278600008318,
+          "terminal_observed_seconds": 0.6810215059999791,
+          "end_to_end_seconds": 0.5107521930000303,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "ad698a2b-3298-44ea-99af-56ba30fd9981",
+          "issued": 0.1861070559999689,
+          "submit_seconds": 0.026714929000036136,
+          "terminal_observed_seconds": 0.6839059010000028,
+          "end_to_end_seconds": 0.4977988450000339,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "74017eb0-d756-4a0f-8aa5-9cf8ed09a803",
+          "issued": 0.21282313999995495,
+          "submit_seconds": 0.03228068099997472,
+          "terminal_observed_seconds": 0.6866692369999328,
+          "end_to_end_seconds": 0.4738460969999778,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "94c0f2da-16d3-4c7d-8a2d-215bf8674eb0",
+          "issued": 0.24510551100001976,
+          "submit_seconds": 0.03281151900000623,
+          "terminal_observed_seconds": 0.689607164999984,
+          "end_to_end_seconds": 0.4445016539999642,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "e64509ef-d364-45e2-b41f-e6f362ca5ba9",
+          "issued": 0.277918494000005,
+          "submit_seconds": 0.026000385999964237,
+          "terminal_observed_seconds": 0.6928874929999438,
+          "end_to_end_seconds": 0.4149689989999388,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "15685de2-541c-4f94-93e5-45212d6d4050",
+          "issued": 0.30392024399998263,
+          "submit_seconds": 0.034323372000017116,
+          "terminal_observed_seconds": 0.6964965299999903,
+          "end_to_end_seconds": 0.3925762860000077,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "550d3450-08e0-4fe2-a62e-e0f9bddfae0e",
+          "issued": 0.33824511000000257,
+          "submit_seconds": 0.020805982999945627,
+          "terminal_observed_seconds": 0.6996335799999542,
+          "end_to_end_seconds": 0.36138846999995167,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "90473bec-ff8a-43ee-81ad-10bae2a77152",
+          "issued": 0.35905292600000394,
+          "submit_seconds": 0.02572198199993636,
+          "terminal_observed_seconds": 0.702542851999965,
+          "end_to_end_seconds": 0.3434899259999611,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "90f4f284-7a2b-41dd-b7ee-3ee4b13652ff",
+          "issued": 0.38477613800000654,
+          "submit_seconds": 0.025553993000016817,
+          "terminal_observed_seconds": 0.7056869120000329,
+          "end_to_end_seconds": 0.3209107740000263,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "1a53398b-98c5-402b-b064-747a9cac99be",
+          "issued": 0.4103323869999258,
+          "submit_seconds": 0.027661858000101347,
+          "terminal_observed_seconds": 0.7098741500000187,
+          "end_to_end_seconds": 0.29954176300009294,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "5f9be2d3-ab34-44cf-a394-ce2e0b619cff",
+          "issued": 0.4379954199999929,
+          "submit_seconds": 0.025852068999938638,
+          "terminal_observed_seconds": 0.7131000179999774,
+          "end_to_end_seconds": 0.27510459799998443,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        },
+        {
+          "task_id": "5f86195b-f252-44eb-ada1-5f1fae1e4d52",
+          "issued": 0.4638485859999264,
+          "submit_seconds": 0.031102735000104076,
+          "terminal_observed_seconds": 0.716075845999967,
+          "end_to_end_seconds": 0.2522272600000406,
+          "stdout_bytes": 32768,
+          "stderr_bytes": 32768
+        }
+      ],
+      "workers_after": [
+        {
+          "capacity": {
+            "cpu_slots": 2,
+            "memory_mb": 512
+          },
+          "last_heartbeat_at": "2026-10-30T18:08:28.220028Z",
+          "max_concurrent_tasks": 2,
+          "reserved": {
+            "cpu_slots": 0,
+            "memory_mb": 0
+          },
+          "running_attempts": 0,
+          "session_id": "1558f8cc-c6f1-42e7-9df1-b9e8953d2e6c",
+          "state": "HEALTHY",
+          "worker_id": "local-worker-1"
+        },
+        {
+          "capacity": {
+            "cpu_slots": 2,
+            "memory_mb": 512
+          },
+          "last_heartbeat_at": "2026-10-30T18:08:28.220186Z",
+          "max_concurrent_tasks": 2,
+          "reserved": {
+            "cpu_slots": 0,
+            "memory_mb": 0
+          },
+          "running_attempts": 0,
+          "session_id": "47968c4e-8f82-41a0-91fe-a1a1de754f76",
+          "state": "HEALTHY",
+          "worker_id": "local-worker-2"
+        }
+      ],
+      "resources_before": [
+        {
+          "role": "controller",
+          "cpu_ticks": 3,
+          "peak_rss_kib": 25576,
+          "fds": 18,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 0,
+          "peak_rss_kib": 9784,
+          "fds": 9,
+          "threads": 1
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 0,
+          "peak_rss_kib": 9588,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "resources_after": [
+        {
+          "role": "controller",
+          "cpu_ticks": 16,
+          "peak_rss_kib": 25608,
+          "fds": 18,
+          "threads": 3
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 2,
+          "peak_rss_kib": 9784,
+          "fds": 9,
+          "threads": 1
+        },
+        {
+          "role": "worker",
+          "cpu_ticks": 1,
+          "peak_rss_kib": 9844,
+          "fds": 9,
+          "threads": 1
+        }
+      ],
+      "cpu_ticks_during_measurement": [
+        13,
+        2,
+        1
+      ],
+      "workers": 2,
+      "repetition": 2,
+      "worker_capacity": {
+        "cpu_slots": 2,
+        "memory_mb": 512
+      },
+      "max_concurrent_tasks": 2,
+      "controller_config": {
+        "client_listen": {
+          "address": "127.0.0.1",
+          "port": 42503
+        },
+        "worker_listen": {
+          "address": "127.0.0.1",
+          "port": 48643
+        },
+        "data_dir": "<isolated Linux-local data directory>",
+        "heartbeat": {
+          "interval_ms": 3000,
+          "offline_timeout_ms": 10000
+        },
+        "dispatch": {
+          "ack_timeout_ms": 5000,
+          "start_timeout_ms": 10000
+        },
+        "protocol": {
+          "max_payload_bytes": 4194304
+        },
+        "queues": {
+          "persistence_commands": 4096,
+          "log_bytes": 67108864,
+          "log_commands": 4096,
+          "log_control_reserve": 128,
+          "initial_session_log_window_bytes": 1048576,
+          "initial_session_log_window_chunks": 64
+        },
+        "termination_grace_ms": 200,
+        "logging": {
+          "level": "info",
+          "destination": "stderr"
+        }
+      }
+    }
+  ],
+  "summaries": [
+    {
+      "workers": 1,
+      "workload": "empty",
+      "throughput_median": 28.376628690791094,
+      "throughput_min": 27.43018732052804,
+      "throughput_max": 29.46690317510111,
+      "observed_latency_p50": 0.3666238540000677,
+      "observed_latency_p95": 0.42305257900000015
+    },
+    {
+      "workers": 1,
+      "workload": "binary",
+      "throughput_median": 19.524789106186514,
+      "throughput_min": 18.7829292042895,
+      "throughput_max": 20.16872044259587,
+      "observed_latency_p50": 0.45784224900000936,
+      "observed_latency_p95": 0.7826994780000405
+    },
+    {
+      "workers": 2,
+      "workload": "empty",
+      "throughput_median": 25.355428144700415,
+      "throughput_min": 24.601102048186423,
+      "throughput_max": 25.8809087499272,
+      "observed_latency_p50": 0.5140562029999955,
+      "observed_latency_p95": 0.7138920290000215
+    },
+    {
+      "workers": 2,
+      "workload": "binary",
+      "throughput_median": 27.59499028680717,
+      "throughput_min": 27.14995461030005,
+      "throughput_max": 27.92995920340678,
+      "observed_latency_p50": 0.4716456390000303,
+      "observed_latency_p95": 0.6095851180000409
+    }
+  ]
+}

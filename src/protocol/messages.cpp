@@ -151,7 +151,12 @@ T read_object(const Json& value, const Tuple& fields, std::index_sequence<I...>)
         const bool known = ((it.key() == std::get<I>(fields).name) || ... || false);
         require(known, "unknown field");
     }
-    return T{read_field(value, std::get<I>(fields))...};
+    // Stage each field in an already-owned RAII slot. In GCC 11, direct
+    // aggregate-return initialization can leak earlier members if a later
+    // field throws. Preserve the same left-to-right validation/diagnostics.
+    std::tuple<std::optional<decltype(read_field(value, std::get<I>(fields)))>...> parsed;
+    (std::get<I>(parsed).emplace(read_field(value, std::get<I>(fields))), ...);
+    return T{std::move(*std::get<I>(parsed))...};
 }
 template <typename T> T read(const Json& value) {
     if constexpr (std::is_same_v<T, Json>) { require(value.is_object(), "expected details object"); return clone_json(value); }

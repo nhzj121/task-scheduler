@@ -1,0 +1,22 @@
+[Unit]
+Description=Task Scheduler Worker %i (trusted executables, not a sandbox)
+After=network.target
+
+[Service]
+Type=simple
+User=task-worker
+Group=task-worker
+UMask=0077
+ExecStart="@CMAKE_INSTALL_FULL_BINDIR@/worker" --config /etc/task-scheduler/worker-%i.json
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+Restart=on-failure
+RestartSec=3s
+KillSignal=SIGTERM
+KillMode=mixed
+TimeoutStopSec=45s
+LimitNOFILE=16384
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
