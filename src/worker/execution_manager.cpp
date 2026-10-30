@@ -37,7 +37,7 @@ struct ExecutionManager::Impl {
     Room room;
     std::unique_ptr<runtime::ProcessRuntime> runtime;
     std::map<runtime::RuntimeProcessId, Running> processes;
-    std::set<domain::AttemptId> seen;
+    std::map<domain::AttemptId, domain::TaskId> seen;
     domain::ResourceUsage usage{domain::ResourceUsage::zero()};
     std::size_t metadata{0}, tick_bytes{0}, tick_chunks{0};
     std::uint64_t bytes{0}, chunks{0}, grace_ms{1000};
@@ -78,7 +78,11 @@ struct ExecutionManager::Impl {
             protocol::base64_encode(std::string_view(reinterpret_cast<const char*>(data), size))};
         bytes -= size; --chunks; tick_bytes -= size; --tick_chunks;
         ++position.next_sequence; position.bytes += size; ++task.ordinal;
-        return send({wire(chunk, 0), net::QueueClass::Log, net::OrderPoint{id, task.ordinal}, {}});
+        auto sent = send({wire(chunk, 0), net::QueueClass::Log, net::OrderPoint{id, task.ordinal}, {}});
+        // A synchronous transport-close callback can invalidate this session.
+        // Its remaining bytes are drained locally as incomplete, never replayed.
+        if (!sent && stopping) return R::success();
+        return sent;
     }
     void finish(const protocol::RunTask& task, const runtime::ProcessCompletion* completion,
                 const Running* running, std::string failure = {}) {
@@ -90,7 +94,13 @@ struct ExecutionManager::Impl {
             message.stdout_bytes = running->out.bytes; message.stderr_bytes = running->err.bytes;
         }
         if (!failure.empty()) message.reason = failure.substr(0, 256);
-        else if (completion && !completion->exec_succeeded) {
+        else if (completion && completion->termination_cause == runtime::TerminationCause::CANCELLED) {
+            message.outcome = protocol::Outcome::Cancelled;
+            if (completion->leader_outcome) {
+                message.exit_code = completion->leader_outcome->exit_code;
+                message.term_signal = completion->leader_outcome->term_signal;
+            }
+        } else if (completion && !completion->exec_succeeded) {
             message.reason = completion->launch_failure ?
                 "child launch failed at stage " + std::to_string(static_cast<unsigned int>(completion->launch_failure->stage)) +
                 ", errno " + std::to_string(completion->launch_failure->error_number) : "launch failed before exec confirmation";
@@ -168,7 +178,7 @@ common::Result<void> ExecutionManager::accept(const protocol::RunTask& task, std
         if (!fits) { ack.error_code = "LOCAL_CAPACITY_OR_DUPLICATE"; ack.message = "local execution admission rejected"; }
         checked(s.send({wire(ack, request)})); // accepted ACK is queued BEFORE real preparation/fork
         if (!fits) return R::success();
-        s.seen.insert(task.attempt_id);
+        s.seen.emplace(task.attempt_id, task.task_id);
         runtime::LaunchOptions options;
         options.execution = {task.executable, task.args, {}, task.cwd};
         for (const auto& env : task.env) options.execution.environment_overrides.push_back(env);
@@ -192,6 +202,38 @@ common::Result<void> ExecutionManager::accept(const protocol::RunTask& task, std
         checked(s.runtime->set_output_enabled(id, runtime::OutputStream::STDERR, false));
         return R::success();
     } catch (const std::exception& e) { return R::failure(e.what()); }
+}
+common::Result<void> ExecutionManager::cancel(const protocol::WorkerCancelTask& task, std::uint64_t request) {
+    using R = common::Result<void>; auto& s = *impl_;
+    try {
+        if (!s.active || s.stopping || !request || !(task.worker_id == s.config.worker_id) ||
+            !(task.session_id == s.session) || !task.grace_ms ||
+            task.grace_ms > static_cast<std::uint64_t>(INT64_MAX) / 1000000)
+            return R::failure("CANCEL identity/phase/range mismatch");
+        const auto known = s.seen.find(task.attempt_id);
+        if (known != s.seen.end() && !(known->second == task.task_id)) return R::failure("CANCEL Task mismatch");
+        const auto owner = std::find_if(s.processes.begin(), s.processes.end(), [&](const auto& item) {
+            return item.second.task.attempt_id == task.attempt_id;
+        });
+        const bool handled = known != s.seen.end();
+        const auto observation = owner == s.processes.end() ? std::optional<runtime::ProcessObservation>{} : s.runtime->observe(owner->first);
+        const bool terminal = handled && (owner == s.processes.end() || (observation && observation->outcome_fixed));
+        checked(s.send({wire(protocol::WorkerCancelTaskAck{s.config.worker_id, s.session, task.attempt_id,
+            handled, terminal, handled ? std::nullopt : std::optional<std::string>{"unknown Attempt"}}, request)}));
+        if (handled && !terminal) {
+            if (!observation) return R::failure("CANCEL runtime owner missing");
+            checked(s.runtime->cancel(owner->first, std::chrono::milliseconds(task.grace_ms)));
+        }
+        return R::success();
+    } catch (const std::exception& e) { return R::failure(e.what()); }
+}
+common::Result<void> ExecutionManager::reset_session(domain::SessionId session) {
+    auto& s = *impl_;
+    if (!s.stopping || !s.processes.empty() || s.runtime->running_count())
+        return common::Result<void>::failure("session reset before runtime cleanup");
+    s.session = session; s.seen.clear(); s.metadata = 0; s.usage = domain::ResourceUsage::zero();
+    s.bytes = 0; s.chunks = 0; s.tick_bytes = 0; s.tick_chunks = 0; s.active = false; s.stopping = false;
+    return common::Result<void>::success();
 }
 common::Result<void> ExecutionManager::tick() {
     using R = common::Result<void>; auto& s = *impl_;
@@ -219,7 +261,7 @@ common::Result<void> ExecutionManager::tick() {
             s.usage = checked(domain::subtract(s.usage, it->second.task.resources));
             s.metadata -= it->second.metadata_bytes; s.processes.erase(it);
         }
-        if (send_failure) return R::failure(*send_failure);
+        if (send_failure && !s.stopping) return R::failure(*send_failure);
         s.interests(); return R::success();
     } catch (const std::exception& e) { return R::failure(e.what()); }
 }

@@ -6,7 +6,7 @@
 int main(int argc, char** argv) {
     try {
         if (argc == 2 && std::string(argv[1]) == "--help") {
-            std::cout << "worker --config FILE\nM7: real local execution; no reconnect or durable log service.\n"; return 0;
+            std::cout << "worker --config FILE\nLocal execution, cancellation and cleanup before session reconnect.\n"; return 0;
         }
         if (argc != 3 || std::string(argv[1]) != "--config") throw std::invalid_argument("use worker --help");
         auto parsed = ts::domain::WorkerConfig::parse(ts::apps::config_file(argv[2]));

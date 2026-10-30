@@ -264,7 +264,10 @@ class M7Loopback(Harness):
             result = subprocess.run([str(BIN / name), "--help"], cwd=self.root, capture_output=True, timeout=3)
             self.assertEqual(result.returncode, 0)
         self.assertFalse((self.root / "data").exists())
-        bad = self.write_json("bad.json", dict(worker_id="bad worker", capacity=dict(cpu_slots=1, memory_mb=0)))
+        # Spaces are valid ASCII Worker IDs; previously this fixture exited only
+        # because the Controller was absent. M9 reconnect makes that valid config
+        # stay alive. Use an actually invalid domain capacity for this assertion.
+        bad = self.write_json("bad.json", dict(worker_id="bad worker", capacity=dict(cpu_slots=0, memory_mb=0)))
         invalid = self.spawn("worker", "--config", bad)
         self.assertEqual(invalid.wait(timeout=3), 1)
         for _ in range(3):
@@ -407,12 +410,14 @@ class M7Loopback(Harness):
         peer = self.peer()
         for token in ("bad", "a" * 257):
             self.assertEqual(peer.request(0x0105, dict(page_token=token), 3)[2]["code"], "INVALID_ARGUMENT")
-        # Logs is implemented in M8; cancel/retry remain explicit M9 exclusions.
+        # M9 enables cancel/retry. Preserve history/list coverage above and check
+        # the newly authorized conflict/success behavior instead of UNSUPPORTED.
         pending = self.submit("--cpu", "100", "/bin/true")
         self.assertEqual(peer.request(0x0107, dict(task_id=pending, attempt_no=None, stream="stdout", offset=0,
                                                 snapshot_end=None), 4)[2]["code"], "NOT_FOUND")
-        for operation in ("cancel", "retry"):
-            self.assertEqual(self.cli(operation, task, code=2)[0]["code"], "UNSUPPORTED")
+        self.assertEqual(self.cli("cancel", task, code=2)[0]["code"], "CONFLICT")
+        self.assertEqual(self.cli("retry", task)[0]["next_attempt_no"], 206)
+        self.assertEqual(len(self.get(task)["attempts"]), 205)
 
     def test_registration_replacement_heartbeat_and_staging_exhaustion(self):
         self.config["queues"] = dict(log_bytes=1024, log_commands=3, log_control_reserve=1,

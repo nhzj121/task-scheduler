@@ -85,6 +85,11 @@ int main(int argc, char** argv) {
         return 100;
     }
     const std::string mode(argv[1]);
+    if (mode == "fail-until-file" && argc == 3) {
+        write_text(STDOUT_FILENO, "attempt-output\n");
+        write_text(STDERR_FILENO, "attempt-diagnostic\n");
+        return ::access(argv[2], F_OK) == 0 ? 0 : 7;
+    }
     if (mode == "continuous") {
         static_cast<void>(::signal(SIGTERM, SIG_IGN));
         std::vector<unsigned char> block(4096U, 0x5aU);

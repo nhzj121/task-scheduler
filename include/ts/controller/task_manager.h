@@ -21,6 +21,9 @@ struct Effect {
     std::optional<SessionKey> session;
     std::optional<ClientRequest> client;
     std::uint64_t task_version{0}, attempt_version{0}, operation_id{0};
+    // Durable response facts captured when emitted, never read from a later row.
+    std::optional<std::string> cancel_requested_at{};
+    std::optional<std::uint32_t> next_attempt_no{};
 };
 enum class EffectAdmission { Accepted, ClientGone, Full };
 class PersistencePort {

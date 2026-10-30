@@ -464,15 +464,18 @@ public:
         return common::Result<RuntimeProcessId>::success(id);
     }
 
-    common::Result<bool> cancel(RuntimeProcessId process_id) {
+    common::Result<bool> cancel(RuntimeProcessId process_id, std::optional<std::chrono::nanoseconds> grace) {
+        if (grace && grace->count() <= 0) return common::Result<bool>::failure("termination grace must be positive");
         const auto iterator = processes_.find(process_id);
         if (iterator == processes_.end()) {
             return common::Result<bool>::success(false);
         }
         RunningProcess& process = *iterator->second;
+        if (process.launch_failure) return common::Result<bool>::success(false);
         if (!process.handle.install_termination_cause(TerminationCause::CANCELLED)) {
             return common::Result<bool>::success(false);
         }
+        if (grace) process.grace = *grace;
         if (process.exec_resolved && process.exec_succeeded &&
             process.handle.group_established()) {
             send_term(process);
@@ -550,7 +553,8 @@ public:
         if (it == processes_.end()) return std::nullopt;
         const auto& process = *it->second;
         return ProcessObservation{process.handle.leader_pid(), process.exec_resolved,
-            process.exec_succeeded, process.stdout_eof, process.stderr_eof, process.launch_failure};
+            process.exec_succeeded, process.stdout_eof, process.stderr_eof, process.launch_failure,
+            process.handle.reaped() || process.launch_failure.has_value()};
     }
 
     void fail_next_registrations_for_testing(std::uint32_t mask) {
@@ -1139,8 +1143,8 @@ common::Result<RuntimeProcessId> ProcessRuntime::launch(const LaunchOptions& opt
     return implementation_->launch(options);
 }
 
-common::Result<bool> ProcessRuntime::cancel(RuntimeProcessId process_id) {
-    return implementation_->cancel(process_id);
+common::Result<bool> ProcessRuntime::cancel(RuntimeProcessId process_id, std::optional<std::chrono::nanoseconds> grace) {
+    return implementation_->cancel(process_id, grace);
 }
 
 common::Result<std::size_t> ProcessRuntime::poll_once(int timeout_ms) {

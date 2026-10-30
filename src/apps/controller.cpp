@@ -8,7 +8,7 @@
 int main(int argc, char** argv) {
     try {
         if (argc == 2 && std::string(argv[1]) == "--help") {
-            std::cout << "controller [--config FILE]\nM7 partial vertical slice; trusted loopback/private network only.\n"; return 0;
+            std::cout << "controller [--config FILE]\nTrusted loopback/private network only.\n"; return 0;
         }
         auto config = ts::domain::ControllerConfig::defaults();
         if (argc != 1) {
