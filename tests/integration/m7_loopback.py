@@ -92,6 +92,8 @@ class Peer:
 
 
 class Harness(unittest.TestCase):
+    expected_controller_threads = 3
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="task-scheduler-m7-")
         self.root = Path(self.temp.name)

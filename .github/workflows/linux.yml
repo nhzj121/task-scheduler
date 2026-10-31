@@ -33,3 +33,4 @@ jobs:
             ${{ runner.temp }}/build-${{ matrix.mode }}/*.log
             ${{ runner.temp }}/build-${{ matrix.mode }}/validation.json
             ${{ runner.temp }}/build-${{ matrix.mode }}/Testing/Temporary/*.log
+            ${{ runner.temp }}/build-${{ matrix.mode }}/tsan-applications-*/**

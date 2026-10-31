@@ -1,0 +1,858 @@
+{
+  "baseline": "2d5594f56cdb42e58ef6a90a4d77156505e2fc89",
+  "main": "8bffdcf302adf31a73aa01926004de217a6f2a46",
+  "status": "PASS",
+  "date": "2026-10-31 Asia/Shanghai",
+  "runner": {
+    "mode": "tsan",
+    "source": "/mnt/e/Deck_all_need/projects/work/task_scheduler",
+    "build": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12",
+    "status": "PASS",
+    "commands": [
+      {
+        "argv": [
+          "cmake",
+          "-S",
+          "/mnt/e/Deck_all_need/projects/work/task_scheduler",
+          "-B",
+          "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12",
+          "-DCMAKE_BUILD_TYPE=Debug",
+          "-DBUILD_TESTING=ON",
+          "-DTS_SANITIZER=thread",
+          "-DCMAKE_GTEST_DISCOVER_TESTS_DISCOVERY_MODE=PRE_TEST"
+        ],
+        "exit_code": 0,
+        "seconds": 2.107642499999997,
+        "log": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/configure.log"
+      },
+      {
+        "argv": [
+          "cmake",
+          "--build",
+          "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12",
+          "-j2"
+        ],
+        "exit_code": 0,
+        "seconds": 0.91346877400008,
+        "log": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/build.log"
+      },
+      {
+        "argv": [
+          "setarch",
+          "x86_64",
+          "-R",
+          "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_sanitizer_probe"
+        ],
+        "exit_code": 0,
+        "seconds": 0.012409910999963358,
+        "log": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/runtime-probe.log"
+      },
+      {
+        "argv": [
+          "setarch",
+          "x86_64",
+          "-R",
+          "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_milestone1_tests",
+          "--gtest_filter=BoundedQueue.*"
+        ],
+        "exit_code": 0,
+        "seconds": 0.03128203200003554,
+        "log": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_milestone1_tests.log"
+      },
+      {
+        "argv": [
+          "setarch",
+          "x86_64",
+          "-R",
+          "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_milestone2_tests",
+          "--gtest_filter=*Channel*:*Wakeup*"
+        ],
+        "exit_code": 0,
+        "seconds": 0.040506101999994826,
+        "log": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_milestone2_tests.log"
+      },
+      {
+        "argv": [
+          "setarch",
+          "x86_64",
+          "-R",
+          "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_milestone5_tests",
+          "--gtest_filter=StoreTest.CountReserve*:StoreTest.CompletionByte*:StoreTest.SlowSqlite*:StoreTest.Eventfd*:StorageStress.*:StorageChannel.Notification*"
+        ],
+        "exit_code": 0,
+        "seconds": 1.0261368609999408,
+        "log": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_milestone5_tests.log"
+      },
+      {
+        "argv": [
+          "setarch",
+          "x86_64",
+          "-R",
+          "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_milestone8_tests",
+          "--gtest_filter=LogWriter.*"
+        ],
+        "exit_code": 0,
+        "seconds": 0.43844568099996195,
+        "log": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_milestone8_tests.log"
+      },
+      {
+        "argv": [
+          "setarch",
+          "x86_64",
+          "-R",
+          "/usr/bin/python3",
+          "/mnt/e/Deck_all_need/projects/work/task_scheduler/tests/integration/tsan_applications.py",
+          "--bin",
+          "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12",
+          "--artifacts",
+          "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/tsan-applications-hj43droj",
+          "--fixed-address-layout"
+        ],
+        "exit_code": 0,
+        "seconds": 23.36307686400005,
+        "log": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/tsan-applications.log"
+      }
+    ],
+    "options": {
+      "TSAN_OPTIONS": "halt_on_error=1"
+    },
+    "runtime_workaround": "explicit process-local fixed address layout via setarch -R",
+    "application_evidence": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/tsan-applications-hj43droj/applications.json"
+  },
+  "applications": {
+    "status": "PASS",
+    "bin": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12",
+    "fixed_layout": true,
+    "options": {
+      "TSAN_OPTIONS": "halt_on_error=1"
+    },
+    "binaries": {
+      "controller": {
+        "path": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/controller",
+        "sha256": "7511ce3623241fb06cb647e48132398a318958d3c6d3ec6edd0a125e9cab323d",
+        "tsan_symbols": [
+          "U __tsan_atomic32_fetch_add",
+          "U __tsan_atomic32_load",
+          "U __tsan_func_entry",
+          "U __tsan_func_exit",
+          "U __tsan_init",
+          "U __tsan_read1",
+          "U __tsan_read16",
+          "U __tsan_read2",
+          "U __tsan_read4",
+          "U __tsan_read8",
+          "U __tsan_read_range",
+          "U __tsan_vptr_update",
+          "U __tsan_write1",
+          "U __tsan_write16",
+          "U __tsan_write2",
+          "U __tsan_write4",
+          "U __tsan_write8",
+          "U __tsan_write_range"
+        ],
+        "flags": "# CMAKE generated file: DO NOT EDIT!\n# Generated by \"Unix Makefiles\" Generator, CMake Version 3.22\n\n# compile CXX with /home/nhzj121/build/task_scheduler-m10-toolchain/root/usr/bin/g++-12\nCXX_DEFINES = -DFMT_LOCALE -DFMT_SHARED -DJSON_DIAGNOSTICS=0 -DJSON_USE_IMPLICIT_CONVERSIONS=1 -DSPDLOG_COMPILED_LIB -DSPDLOG_FMT_EXTERNAL -DSPDLOG_SHARED_LIB\n\nCXX_INCLUDES = -I/mnt/e/Deck_all_need/projects/work/task_scheduler/include\n\nCXX_FLAGS = -g -fsanitize=thread -fno-omit-frame-pointer -g -fno-pie -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow -Werror -std=c++17\n\n"
+      },
+      "worker": {
+        "path": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/worker",
+        "sha256": "0a19ca3063c61ac1bf23c5299d225e29696f5dd07106bdcd0347880a14d56883",
+        "tsan_symbols": [
+          "U __tsan_atomic32_fetch_add",
+          "U __tsan_atomic32_load",
+          "U __tsan_func_entry",
+          "U __tsan_func_exit",
+          "U __tsan_init",
+          "U __tsan_read1",
+          "U __tsan_read16",
+          "U __tsan_read2",
+          "U __tsan_read4",
+          "U __tsan_read8",
+          "U __tsan_read_range",
+          "U __tsan_vptr_update",
+          "U __tsan_write1",
+          "U __tsan_write16",
+          "U __tsan_write2",
+          "U __tsan_write4",
+          "U __tsan_write8",
+          "U __tsan_write_range"
+        ],
+        "flags": "# CMAKE generated file: DO NOT EDIT!\n# Generated by \"Unix Makefiles\" Generator, CMake Version 3.22\n\n# compile CXX with /home/nhzj121/build/task_scheduler-m10-toolchain/root/usr/bin/g++-12\nCXX_DEFINES = -DFMT_LOCALE -DFMT_SHARED -DJSON_DIAGNOSTICS=0 -DJSON_USE_IMPLICIT_CONVERSIONS=1 -DSPDLOG_COMPILED_LIB -DSPDLOG_FMT_EXTERNAL -DSPDLOG_SHARED_LIB\n\nCXX_INCLUDES = -I/mnt/e/Deck_all_need/projects/work/task_scheduler/include\n\nCXX_FLAGS = -g -fsanitize=thread -fno-omit-frame-pointer -g -fno-pie -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow -Werror -std=c++17\n\n"
+      },
+      "taskctl": {
+        "path": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/taskctl",
+        "sha256": "95a6f68ffea07ac79fcaa3d3721c3e083dc4178582e9271a5ab27a26738308f9",
+        "tsan_symbols": [
+          "U __tsan_atomic32_fetch_add",
+          "U __tsan_atomic32_load",
+          "U __tsan_func_entry",
+          "U __tsan_func_exit",
+          "U __tsan_init",
+          "U __tsan_read1",
+          "U __tsan_read16",
+          "U __tsan_read2",
+          "U __tsan_read4",
+          "U __tsan_read8",
+          "U __tsan_read_range",
+          "U __tsan_vptr_update",
+          "U __tsan_write1",
+          "U __tsan_write16",
+          "U __tsan_write2",
+          "U __tsan_write4",
+          "U __tsan_write8",
+          "U __tsan_write_range"
+        ],
+        "flags": "# CMAKE generated file: DO NOT EDIT!\n# Generated by \"Unix Makefiles\" Generator, CMake Version 3.22\n\n# compile CXX with /home/nhzj121/build/task_scheduler-m10-toolchain/root/usr/bin/g++-12\nCXX_DEFINES = -DJSON_DIAGNOSTICS=0 -DJSON_USE_IMPLICIT_CONVERSIONS=1\n\nCXX_INCLUDES = -I/mnt/e/Deck_all_need/projects/work/task_scheduler/include\n\nCXX_FLAGS = -g -fsanitize=thread -fno-omit-frame-pointer -g -fno-pie -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow -Werror -std=c++17\n\n"
+      },
+      "ts_log_workload": {
+        "path": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_log_workload",
+        "sha256": "8f58da34c33ce424a6c7bc6e02b8832b794c0fc3c14d41a767e6153b6b856b12",
+        "tsan_symbols": [
+          "U __tsan_func_entry",
+          "U __tsan_func_exit",
+          "U __tsan_init",
+          "U __tsan_read1",
+          "U __tsan_read4",
+          "U __tsan_read8",
+          "U __tsan_write1",
+          "U __tsan_write4",
+          "U __tsan_write8",
+          "U __tsan_write_range"
+        ],
+        "flags": "# CMAKE generated file: DO NOT EDIT!\n# Generated by \"Unix Makefiles\" Generator, CMake Version 3.22\n\n# compile CXX with /home/nhzj121/build/task_scheduler-m10-toolchain/root/usr/bin/g++-12\nCXX_DEFINES = \n\nCXX_INCLUDES = \n\nCXX_FLAGS = -g -fsanitize=thread -fno-omit-frame-pointer -g -fno-pie -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow -Werror -std=c++17\n\n"
+      },
+      "ts_runtime_test_helper": {
+        "path": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_runtime_test_helper",
+        "sha256": "910afe1135dd14e9ed9373b49e0fee3516781e0ed20a8baa70e13ac30665bce0",
+        "tsan_symbols": [
+          "U __tsan_func_entry",
+          "U __tsan_func_exit",
+          "U __tsan_init",
+          "U __tsan_read1",
+          "U __tsan_read4",
+          "U __tsan_read8",
+          "U __tsan_write1",
+          "U __tsan_write4",
+          "U __tsan_write8",
+          "U __tsan_write_range"
+        ],
+        "flags": "# CMAKE generated file: DO NOT EDIT!\n# Generated by \"Unix Makefiles\" Generator, CMake Version 3.22\n\n# compile CXX with /home/nhzj121/build/task_scheduler-m10-toolchain/root/usr/bin/g++-12\nCXX_DEFINES = \n\nCXX_INCLUDES = \n\nCXX_FLAGS = -g -fsanitize=thread -fno-omit-frame-pointer -g -fno-pie -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow -Werror -std=c++17\n\n"
+      }
+    },
+    "cases": [
+      {
+        "case": "M8Loopback.test_empty_real_barrier_terminal_release_and_restart",
+        "processes": [
+          {
+            "pid": 9344,
+            "name": "controller",
+            "argv": [
+              "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/controller",
+              "--config",
+              "/tmp/task-scheduler-m7-wfyug1hm/controller.json"
+            ],
+            "log": "controller-0.log",
+            "exit_code": 0
+          },
+          {
+            "pid": 9349,
+            "name": "worker",
+            "argv": [
+              "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/worker",
+              "--config",
+              "/tmp/task-scheduler-m7-wfyug1hm/worker-a.json"
+            ],
+            "log": "worker-1.log",
+            "exit_code": 0
+          },
+          {
+            "pid": 9560,
+            "name": "controller",
+            "argv": [
+              "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/controller",
+              "--config",
+              "/tmp/task-scheduler-m7-wfyug1hm/controller.json"
+            ],
+            "log": "controller-2.log",
+            "exit_code": 0
+          }
+        ],
+        "live_applications": [
+          {
+            "pid": 9344,
+            "name": "controller",
+            "executable": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/controller",
+            "tsan_modules": [
+              "/home/nhzj121/build/task_scheduler-m10-toolchain/root/usr/lib/x86_64-linux-gnu/libtsan.so.2.0.0"
+            ],
+            "personality": "0x40000",
+            "threads": 4
+          },
+          {
+            "pid": 9349,
+            "name": "worker",
+            "executable": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/worker",
+            "tsan_modules": [
+              "/home/nhzj121/build/task_scheduler-m10-toolchain/root/usr/lib/x86_64-linux-gnu/libtsan.so.2.0.0"
+            ],
+            "personality": "0x40000",
+            "threads": 1
+          },
+          {
+            "pid": 9560,
+            "name": "controller",
+            "executable": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/controller",
+            "tsan_modules": [
+              "/home/nhzj121/build/task_scheduler-m10-toolchain/root/usr/lib/x86_64-linux-gnu/libtsan.so.2.0.0"
+            ],
+            "personality": "0x40000",
+            "threads": 4
+          }
+        ],
+        "submissions": [
+          {
+            "task_id": "80d24bd4-2f11-42ae-8f22-897d1817334b",
+            "argv": [
+              "/bin/true"
+            ]
+          },
+          {
+            "task_id": "3ec03826-42d3-4e6f-bc63-e3f08608af00",
+            "argv": [
+              "/bin/true"
+            ]
+          }
+        ],
+        "threads_before_cleanup": [
+          {
+            "pid": 9560,
+            "threads": {
+              "9560": "controller",
+              "9562": "controller",
+              "9563": "controller",
+              "9564": "controller"
+            }
+          }
+        ],
+        "tasks": [
+          [
+            "80d24bd4-2f11-42ae-8f22-897d1817334b",
+            "SUCCEEDED"
+          ],
+          [
+            "3ec03826-42d3-4e6f-bc63-e3f08608af00",
+            "SUCCEEDED"
+          ]
+        ],
+        "attempts": [
+          [
+            "3e3a0d5d-eb69-45ea-a605-2a692b3125d3",
+            "worker-a",
+            "SUCCEEDED",
+            0,
+            0,
+            1
+          ],
+          [
+            "bd93d35e-d24b-4ffe-bbac-c0fbf7bebd38",
+            "worker-a",
+            "SUCCEEDED",
+            0,
+            0,
+            1
+          ]
+        ],
+        "seconds": 0.8161534419999725,
+        "successful": true,
+        "tests_run": 1,
+        "skipped": [],
+        "failures": [],
+        "errors": [],
+        "sanitizer_diagnostics": [],
+        "status": "PASS",
+        "unittest_output": "test_empty_real_barrier_terminal_release_and_restart (__main__.InstrumentedM8Loopback) ... ok\n\n----------------------------------------------------------------------\nRan 1 test in 0.816s\n\nOK\n",
+        "workload_exit_statuses": [
+          {
+            "attempt_id": "3e3a0d5d-eb69-45ea-a605-2a692b3125d3",
+            "state": "SUCCEEDED",
+            "exit_code": 0,
+            "term_signal": null
+          },
+          {
+            "attempt_id": "bd93d35e-d24b-4ffe-bbac-c0fbf7bebd38",
+            "state": "SUCCEEDED",
+            "exit_code": 0,
+            "term_signal": null
+          }
+        ]
+      },
+      {
+        "case": "M8Loopback.test_large_binary_multiple_replenishments_and_paged_cli_are_exact",
+        "processes": [
+          {
+            "pid": 9568,
+            "name": "controller",
+            "argv": [
+              "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/controller",
+              "--config",
+              "/tmp/task-scheduler-m7-z3bil1zs/controller.json"
+            ],
+            "log": "controller-0.log",
+            "exit_code": 0
+          },
+          {
+            "pid": 9572,
+            "name": "worker",
+            "argv": [
+              "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/worker",
+              "--config",
+              "/tmp/task-scheduler-m7-z3bil1zs/worker-a.json"
+            ],
+            "log": "worker-1.log",
+            "exit_code": 0
+          }
+        ],
+        "live_applications": [
+          {
+            "pid": 9568,
+            "name": "controller",
+            "executable": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/controller",
+            "tsan_modules": [
+              "/home/nhzj121/build/task_scheduler-m10-toolchain/root/usr/lib/x86_64-linux-gnu/libtsan.so.2.0.0"
+            ],
+            "personality": "0x40000",
+            "threads": 4
+          },
+          {
+            "pid": 9572,
+            "name": "worker",
+            "executable": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/worker",
+            "tsan_modules": [
+              "/home/nhzj121/build/task_scheduler-m10-toolchain/root/usr/lib/x86_64-linux-gnu/libtsan.so.2.0.0"
+            ],
+            "personality": "0x40000",
+            "threads": 1
+          }
+        ],
+        "submissions": [
+          {
+            "task_id": "66ff23bd-4328-439a-808a-ec855d894c84",
+            "argv": [
+              "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_log_workload",
+              "binary",
+              "4194443",
+              "3145979"
+            ]
+          }
+        ],
+        "threads_before_cleanup": [
+          {
+            "pid": 9568,
+            "threads": {
+              "9568": "controller",
+              "9569": "controller",
+              "9570": "controller",
+              "9571": "controller"
+            }
+          },
+          {
+            "pid": 9572,
+            "threads": {
+              "9572": "worker"
+            }
+          }
+        ],
+        "tasks": [
+          [
+            "66ff23bd-4328-439a-808a-ec855d894c84",
+            "SUCCEEDED"
+          ]
+        ],
+        "attempts": [
+          [
+            "1426b435-10f2-4af3-82f3-d12d656a36e4",
+            "worker-a",
+            "SUCCEEDED",
+            4194443,
+            3145979,
+            1
+          ]
+        ],
+        "seconds": 20.283058938000067,
+        "successful": true,
+        "tests_run": 1,
+        "skipped": [],
+        "failures": [],
+        "errors": [],
+        "sanitizer_diagnostics": [],
+        "status": "PASS",
+        "unittest_output": "test_large_binary_multiple_replenishments_and_paged_cli_are_exact (__main__.InstrumentedM8Loopback) ... ok\n\n----------------------------------------------------------------------\nRan 1 test in 20.283s\n\nOK\n",
+        "workload_exit_statuses": [
+          {
+            "attempt_id": "1426b435-10f2-4af3-82f3-d12d656a36e4",
+            "state": "SUCCEEDED",
+            "exit_code": 0,
+            "term_signal": null
+          }
+        ]
+      },
+      {
+        "case": "M9Loopback.test_retry_can_succeed_on_another_worker_preserving_exact_old_log_history",
+        "processes": [
+          {
+            "pid": 10060,
+            "name": "controller",
+            "argv": [
+              "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/controller",
+              "--config",
+              "/tmp/task-scheduler-m7-azxjlyiq/controller.json"
+            ],
+            "log": "controller-0.log",
+            "exit_code": 0
+          },
+          {
+            "pid": 10064,
+            "name": "worker",
+            "argv": [
+              "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/worker",
+              "--config",
+              "/tmp/task-scheduler-m7-azxjlyiq/worker-a.json"
+            ],
+            "log": "worker-1.log",
+            "exit_code": 0
+          },
+          {
+            "pid": 10074,
+            "name": "worker",
+            "argv": [
+              "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/worker",
+              "--config",
+              "/tmp/task-scheduler-m7-azxjlyiq/worker-b.json"
+            ],
+            "log": "worker-2.log",
+            "exit_code": 0
+          },
+          {
+            "pid": 10087,
+            "name": "controller",
+            "argv": [
+              "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/controller",
+              "--config",
+              "/tmp/task-scheduler-m7-azxjlyiq/controller.json"
+            ],
+            "log": "controller-3.log",
+            "exit_code": 0
+          }
+        ],
+        "live_applications": [
+          {
+            "pid": 10060,
+            "name": "controller",
+            "executable": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/controller",
+            "tsan_modules": [
+              "/home/nhzj121/build/task_scheduler-m10-toolchain/root/usr/lib/x86_64-linux-gnu/libtsan.so.2.0.0"
+            ],
+            "personality": "0x40000",
+            "threads": 4
+          },
+          {
+            "pid": 10064,
+            "name": "worker",
+            "executable": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/worker",
+            "tsan_modules": [
+              "/home/nhzj121/build/task_scheduler-m10-toolchain/root/usr/lib/x86_64-linux-gnu/libtsan.so.2.0.0"
+            ],
+            "personality": "0x40000",
+            "threads": 1
+          },
+          {
+            "pid": 10074,
+            "name": "worker",
+            "executable": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/worker",
+            "tsan_modules": [
+              "/home/nhzj121/build/task_scheduler-m10-toolchain/root/usr/lib/x86_64-linux-gnu/libtsan.so.2.0.0"
+            ],
+            "personality": "0x40000",
+            "threads": 1
+          },
+          {
+            "pid": 10087,
+            "name": "controller",
+            "executable": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/controller",
+            "tsan_modules": [
+              "/home/nhzj121/build/task_scheduler-m10-toolchain/root/usr/lib/x86_64-linux-gnu/libtsan.so.2.0.0"
+            ],
+            "personality": "0x40000",
+            "threads": 4
+          }
+        ],
+        "submissions": [
+          {
+            "task_id": "418f14f6-3e58-4682-a89d-4f1c1be29bed",
+            "argv": [
+              "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_runtime_test_helper",
+              "fail-until-file",
+              "/tmp/task-scheduler-m7-azxjlyiq/allow-success"
+            ]
+          }
+        ],
+        "threads_before_cleanup": [
+          {
+            "pid": 10074,
+            "threads": {
+              "10074": "worker"
+            }
+          },
+          {
+            "pid": 10087,
+            "threads": {
+              "10087": "controller",
+              "10088": "controller",
+              "10089": "controller",
+              "10090": "controller"
+            }
+          }
+        ],
+        "tasks": [
+          [
+            "418f14f6-3e58-4682-a89d-4f1c1be29bed",
+            "SUCCEEDED"
+          ]
+        ],
+        "attempts": [
+          [
+            "d64118ae-8ef6-46b7-955f-0f6631600ce5",
+            "worker-a",
+            "FAILED",
+            15,
+            19,
+            1
+          ],
+          [
+            "ffae83ae-48a0-4de3-ae88-5bd5b29d7ad6",
+            "worker-b",
+            "SUCCEEDED",
+            15,
+            19,
+            1
+          ]
+        ],
+        "seconds": 0.756308820000072,
+        "successful": true,
+        "tests_run": 1,
+        "skipped": [],
+        "failures": [],
+        "errors": [],
+        "sanitizer_diagnostics": [],
+        "status": "PASS",
+        "unittest_output": "test_retry_can_succeed_on_another_worker_preserving_exact_old_log_history (__main__.InstrumentedM9Loopback) ... ok\n\n----------------------------------------------------------------------\nRan 1 test in 0.756s\n\nOK\n",
+        "workload_exit_statuses": [
+          {
+            "attempt_id": "d64118ae-8ef6-46b7-955f-0f6631600ce5",
+            "state": "FAILED",
+            "exit_code": 7,
+            "term_signal": null
+          },
+          {
+            "attempt_id": "ffae83ae-48a0-4de3-ae88-5bd5b29d7ad6",
+            "state": "SUCCEEDED",
+            "exit_code": 0,
+            "term_signal": null
+          }
+        ]
+      }
+    ],
+    "thread_calibration": {
+      "native_compile": {
+        "argv": [
+          "/home/nhzj121/build/task_scheduler-m10-toolchain/root/usr/bin/g++-12",
+          "-std=c++17",
+          "-Wall",
+          "-Wextra",
+          "-Wpedantic",
+          "-Wconversion",
+          "-Wsign-conversion",
+          "-Wshadow",
+          "-Werror",
+          "-pthread",
+          "/mnt/e/Deck_all_need/projects/work/task_scheduler/tests/helpers/tsan_thread_probe.cpp",
+          "-o",
+          "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/tsan-applications-hj43droj/native-thread-probe"
+        ],
+        "exit_code": 0
+      },
+      "probes": [
+        {
+          "kind": "native",
+          "argv": [
+            "setarch",
+            "x86_64",
+            "-R",
+            "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/tsan-applications-hj43droj/native-thread-probe"
+          ],
+          "exit_code": 0,
+          "thread_counts": [
+            2,
+            2,
+            2,
+            2,
+            2
+          ]
+        },
+        {
+          "kind": "tsan",
+          "argv": [
+            "setarch",
+            "x86_64",
+            "-R",
+            "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/ts_tsan_thread_probe"
+          ],
+          "exit_code": 0,
+          "thread_counts": [
+            3,
+            3,
+            3,
+            3,
+            3
+          ]
+        }
+      ],
+      "runtime_threads": 1
+    }
+  },
+  "prior_attempts": [
+    {
+      "directory": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/tsan-applications-0vlbhf1e",
+      "recorded_status": "PASS",
+      "cases": [
+        {
+          "case": "M8Loopback.test_empty_real_barrier_terminal_release_and_restart",
+          "status": "PASS",
+          "failures": [],
+          "errors": []
+        },
+        {
+          "case": "M8Loopback.test_large_binary_multiple_replenishments_and_paged_cli_are_exact",
+          "status": "PASS",
+          "failures": [],
+          "errors": []
+        },
+        {
+          "case": "M9Loopback.test_retry_can_succeed_on_another_worker_preserving_exact_old_log_history",
+          "status": "PASS",
+          "failures": [],
+          "errors": []
+        }
+      ]
+    },
+    {
+      "directory": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/tsan-applications-7b902x9f",
+      "recorded_status": "RUNNING",
+      "cases": []
+    },
+    {
+      "directory": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/tsan-applications-njkxg5om",
+      "recorded_status": "FAILED",
+      "cases": [
+        {
+          "case": "M8Loopback.test_empty_real_barrier_terminal_release_and_restart",
+          "status": "PASS",
+          "failures": [],
+          "errors": []
+        },
+        {
+          "case": "M8Loopback.test_large_binary_multiple_replenishments_and_paged_cli_are_exact",
+          "status": "FAILED",
+          "failures": [
+            "Traceback (most recent call last):\n  File \"/mnt/e/Deck_all_need/projects/work/task_scheduler/tests/integration/m8_loopback.py\", line 103, in test_large_binary_multiple_replenishments_and_paged_cli_are_exact\n    self.assertEqual(len(list(Path(f\"/proc/{self.proc.pid}/task\").iterdir())), 3)\nAssertionError: 4 != 3\n"
+          ],
+          "errors": []
+        }
+      ]
+    },
+    {
+      "directory": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/tsan-applications-thread-diagnostic",
+      "recorded_status": "FAILED",
+      "cases": [
+        {
+          "case": "M8Loopback.test_empty_real_barrier_terminal_release_and_restart",
+          "status": "PASS",
+          "failures": [],
+          "errors": []
+        },
+        {
+          "case": "M8Loopback.test_large_binary_multiple_replenishments_and_paged_cli_are_exact",
+          "status": "FAILED",
+          "failures": [
+            "Traceback (most recent call last):\n  File \"/mnt/e/Deck_all_need/projects/work/task_scheduler/tests/integration/m8_loopback.py\", line 103, in test_large_binary_multiple_replenishments_and_paged_cli_are_exact\n    self.assertEqual(len(list(Path(f\"/proc/{self.proc.pid}/task\").iterdir())), 3)\nAssertionError: 4 != 3\n"
+          ],
+          "errors": []
+        }
+      ]
+    },
+    {
+      "directory": "/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/tsan-applications-vfpqc675",
+      "recorded_status": "PASS",
+      "cases": [
+        {
+          "case": "M8Loopback.test_empty_real_barrier_terminal_release_and_restart",
+          "status": "PASS",
+          "failures": [],
+          "errors": []
+        },
+        {
+          "case": "M8Loopback.test_large_binary_multiple_replenishments_and_paged_cli_are_exact",
+          "status": "PASS",
+          "failures": [],
+          "errors": []
+        },
+        {
+          "case": "M9Loopback.test_retry_can_succeed_on_another_worker_preserving_exact_old_log_history",
+          "status": "PASS",
+          "failures": [],
+          "errors": []
+        }
+      ]
+    }
+  ],
+  "retention_note": "Initial application thread assertion failures are preserved in their case logs/JSON. The initial main-only calibration exception was observed as: TSan overhead not established as exactly one thread. Its outer runner log was overwritten on rerun and its per-sample counts were not saved; it is not counted as passing. The final two-application-thread calibration records all ten samples.",
+  "inventory": {
+    "cases": 473,
+    "all_473_names_and_labels_unchanged": true,
+    "new_ctest_cases": 0,
+    "skipped": 0
+  },
+  "full_ctest": {
+    "log": "/home/nhzj121/build/task_scheduler/m10-tsan-cleanup-final-ctest.log",
+    "cases": 473,
+    "exit_code": 0,
+    "seconds": 74.21,
+    "sha256": "bac408cfd013adf6a03c4faca263479d56afdac662a329e8b1b7c7bbec79fb3a"
+  },
+  "m10": {
+    "log": "/home/nhzj121/build/task_scheduler/m10-tsan-cleanup-final-m10.log",
+    "cases": 7,
+    "exit_code": 0,
+    "seconds": 7.84,
+    "sha256": "c2fab3a77965f78cf61f3b119c3b393d227c88326e75af33ddfc82d0c58a42df"
+  },
+  "asan_affected_m8": {
+    "log": "/home/nhzj121/build/task_scheduler/m10-tsan-cleanup-asan-m8.log",
+    "cases": 1,
+    "exit_code": 0,
+    "seconds": 8.1,
+    "sha256": "271dc823754aa17fa21ea7fae9ea54f36d275cb676b4c7ef98511e7606138c7c"
+  },
+  "asan_m10": {
+    "log": "/home/nhzj121/build/task_scheduler/m10-tsan-cleanup-asan-m10.log",
+    "cases": 7,
+    "exit_code": 0,
+    "seconds": 9.54,
+    "sha256": "41127aecf324addf2f0a3d1e4f6cda3bf755674c24eed9d2657d662b09a12b87"
+  },
+  "protected_sha256": {
+    "build_note": "8bda49a0af4e612892bafdba48effb924573e02a6ccea33b3aa8bd5991d813ae",
+    "personal_notes": "4b2e5a53c77198e9278ebdd3cf40be93ec4468d5707435f4729d26b4dabbc882"
+  },
+  "production_changes_since_review": false,
+  "unverified_selected_cases": [],
+  "suppressions": []
+}

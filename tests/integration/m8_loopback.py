@@ -100,7 +100,7 @@ class M8Loopback(Harness):
         self.assertEqual(self.raw_logs(task, "--limit-bytes", "17777"), out)
         self.assertEqual(self.raw_logs(task, "--stderr", "--limit-bytes", "65536"), err)
         self.assertEqual(self.raw_logs(task, "--both"), out + err)
-        self.assertEqual(len(list(Path(f"/proc/{self.proc.pid}/task").iterdir())), 3)
+        self.assertEqual(len(list(Path(f"/proc/{self.proc.pid}/task").iterdir())), self.expected_controller_threads)
         # One tasks/ directory fd may be retained; per-Attempt files and client
         # sockets must close rather than accumulating with snapshots/chunks.
         eventually(lambda: len(list(Path(f"/proc/{self.proc.pid}/fd").iterdir())) <= baseline_fds + 1)

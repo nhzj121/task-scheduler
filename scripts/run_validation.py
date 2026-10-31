@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import platform
+import tempfile
 from pathlib import Path
 import subprocess
 import sys
@@ -71,6 +72,19 @@ def run(args):
             code, text = execute(prefix + [build / executable, "--gtest_filter=" + selection], executable)
             if code or "Running 0 tests" in text:
                 evidence["status"] = "FAILED_TESTS"; save(); return 1
+        # setarch on Python is intentional: its personality is inherited by the
+        # actual instrumented daemons and workloads across Popen/fork/exec.
+        artifacts = Path(tempfile.mkdtemp(prefix="tsan-applications-", dir=build))
+        artifacts.rmdir()  # reserve a unique name; driver creates its own leaf
+        command = prefix + [sys.executable, source / "tests/integration/tsan_applications.py",
+                            "--bin", build, "--artifacts", artifacts]
+        if prefix:
+            command.append("--fixed-address-layout")
+        code, _ = execute(command, "tsan-applications")
+        evidence["application_evidence"] = str(artifacts / "applications.json")
+        if code:
+            evidence["status"] = "ENVIRONMENT_LIMITED" if code == 2 else "FAILED_APPLICATION_TESTS"
+            save(); return 2 if code == 2 else 1
     else:
         code, _ = execute(["ctest", "--test-dir", build, "--output-on-failure"], "ctest")
         if code:

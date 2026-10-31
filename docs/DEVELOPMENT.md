@@ -54,10 +54,29 @@ tests/helpers/tsan_clockwait_probe.cpp -o /tmp/ts-clockwait-UNIQUE`, then run
 Select a new sanitizer build tree when changing compilers. An unsupported runtime
 does not excuse a project finding or permit suppressing synchronization checks.
 
-TSan deliberately selects real queue/wakeup/persistence/log-writer handoffs rather
-than claiming the whole fork-based cluster matrix. A pre-main mapping/runtime
-failure is exit 2 / ENVIRONMENT_LIMITED, with zero functional tests passed; it is
-not a successful sanitizer gate. Project findings are exit 1 and require repair.
+TSan runs 30 queue/wakeup/persistence/log-writer tests **and three actual
+Controller/Worker integration cases** through `tests/integration/tsan_applications.py`:
+empty durable completion/restart, >7 MiB binary log replenishment/pagination, and
+cross-Worker manual retry with immutable history. The runner invokes the driver
+under the same setarch personality, inherited by its instrumented child binaries.
+It verifies CMake flags, undefined TSan memory-access symbols, actual `/proc/exe`,
+mapped libtsan and child personality; all application exits and sanitizer logs
+are checked. Python is an external driver, not the claimed instrumented program.
+
+`validation.json` references a unique `tsan-applications-*/applications.json` with
+per-case commands, observed workloads, live processes, SQL facts and exit codes.
+Application/workload logs and test outputs are retained there, including failures;
+CI uploads that directory. No accepted case is skipped or renamed. The existing
+large-log case still requires exactly three Controller threads in ordinary runs.
+Only this TSan adapter uses exactly four, after a same-compiler control probe
+measures two explicit application threads natively versus three when instrumented
+(five samples each). It does not allow arbitrary extra threads or suppress races.
+
+This is selected integration coverage, not the whole fork-based cluster matrix.
+An incompatible initial runtime probe is exit 2 / ENVIRONMENT_LIMITED with zero
+functional tests executed. An explicit mapping failure in a later application
+case retains the suites already executed but still leaves the gate incomplete.
+Neither is PASS. Project findings are exit 1 and require repair.
 `validation.json` plus logs are the evidence, not merely the presence of flags.
 
 Production ownership graph: common/domain below io/protocol/net/runtime/storage;
