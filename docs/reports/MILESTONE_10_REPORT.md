@@ -10,11 +10,14 @@ Delivery review: 2026-10-31 (Asia/Shanghai). Scope: M10-A through M10-D only.
   Fetch on resumption confirmed the same mainline. No merge, reset, force-push,
   release/tag, package publication or production deployment is authorized/performed.
 - Implementation/evidence commit: `8926dd0b753587f031019a105a9ab3a8abcf3add`.
-  The following acceptance-report commit is the delivery HEAD; its own exact SHA
+  Initial report/review HEAD: `2d5594f56cdb42e58ef6a90a4d77156505e2fc89`.
+  Independent review required the final TSan integration cleanup under G below.
+  Cleanup implementation/evidence commit: `fe12ba077f282c30eb0cc9e5b83973ff0853482d`.
+  The final acceptance-report commit is the delivery HEAD; its own exact SHA
   is provided in the delivery message and by `git rev-parse HEAD`. A report cannot
   embed its own commit hash. Delivery uses an ordinary branch-only push, followed
   by `git ls-remote` verification of that exact tip.
-- Final expected/required comparison: main-to-M10 `0 2`, local/remote M10 `0 0`,
+- Final expected/required comparison: main-to-M10 `0 4`, local/remote M10 `0 0`,
   main/origin/main `0 0`, all main refs still at the accepted SHA above. These
   post-push checks must succeed before the external PASS report is issued.
   Code diff and milestone commits are reviewed; `git diff --check main...HEAD`
@@ -54,6 +57,12 @@ Modified:
   remain unchanged. The new 1,000-rejection regression runs with LSan enabled.
 - `docs/INTERVIEW_NOTES.md`: implemented source/test tradeoff map and measured-claim
   caveats precede the unchanged original architecture-phase notes; no decision changes.
+- Final TSan cleanup modifies only test/tooling/docs: the runner now requires
+  actual application integration; CI retains those artifacts; a test-only
+  `ts_tsan_thread_probe` target calibrates runtime overhead. M7 Harness's default
+  Controller thread expectation remains exactly 3; M8's existing assertion reads
+  that default, with exactly 4 used only by the calibrated TSan adapter. No
+  production file changes were needed after the independent-review baseline.
 
 Added:
 
@@ -67,6 +76,11 @@ Added:
 - `tests/component/m10_protocol_hardening_test.cpp`,
   `tests/helpers/{sanitizer_probe,tsan_clockwait_probe}.cpp`,
   `tests/integration/m10_deployment.py`.
+- Final cleanup adds `tests/helpers/tsan_thread_probe.cpp`,
+  `tests/integration/tsan_applications.py`, and
+  `docs/validation/M10_TSAN_APPLICATIONS_EVIDENCE.json`; it modifies
+  `tests/integration/{m7_loopback,m8_loopback}.py` as described above and updates
+  the already-listed CMake, runner, CI, development guide and this report.
 - `docs/benchmarks/M10_BENCHMARK_REPORT.md`, `docs/benchmarks/m10_results.json`,
   `docs/validation/M10_VALIDATION_EVIDENCE.json`, `docs/reports/MILESTONE_10_REPORT.md`.
 
@@ -217,6 +231,53 @@ also exited before main, so it is retained as a failed diagnostic, not counted a
 a successful test. Final probe and all 30 selected tests really executed.
 This does not claim the entire fork-based cluster matrix ran under TSan.
 
+### Final TSan acceptance cleanup
+
+The initial 30-case selection omitted the frozen TEST_STRATEGY requirement for
+selected Controller/Worker integration tests. Independent review identified that
+coverage gap; the previous broad TSan gate claim was incomplete. The final runner
+requires the original 30 cases **plus all three** of these existing workflows:
+
+| Existing case | Actual instrumented workload and checked path |
+|---|---|
+| M8Loopback.test_empty_real_barrier_terminal_release_and_restart | Ordinary Controller + Worker, two direct /bin/true executions, complete empty files/barriers, SQLite terminal state, resource release and Controller restart/history. |
+| M8Loopback.test_large_binary_multiple_replenishments_and_paged_cli_are_exact | Ordinary Controller + Worker, instrumented ts_log_workload; exact 4,194,443 stdout and 3,145,979 stderr bytes; credit replenishment, LogWriter write/completion wakeups, final barrier/SQLite commit, exact paginated downloads and fd check. |
+| M9Loopback.test_retry_can_succeed_on_another_worker_preserving_exact_old_log_history | Ordinary Controller and Workers a/b, instrumented ts_runtime_test_helper fail-until-file; first FAILED then manual retry SUCCEEDED, exact old Attempt/log preservation and restart; 15 stdout/19 stderr bytes each Attempt. |
+
+The exact invocation remains the GCC 12 runner command above. It now records and
+runs `setarch x86_64 -R python3 tests/integration/tsan_applications.py --bin BUILD
+--artifacts BUILD/tsan-applications-UNIQUE --fixed-address-layout`. These are real
+instrumented applications, not an instrumented Python harness: `nm -u` verifies
+TSan memory-access/prologue symbols, target flags include `-fsanitize=thread`,
+and live `/proc/PID/exe`, libtsan mappings and personality `0x40000` are retained.
+Nine application startups (five Controller, four Worker), all application exit
+codes 0, and no race diagnostics are required. Skipped/zero-test cases cannot pass.
+Final execution returned 0: the three cases took 0.816s, 20.283s and 0.756s
+respectively; the complete application driver (including calibration/provenance)
+took 23.363s. Final raw evidence directory:
+`/home/nhzj121/build/task_scheduler-m10-tsan-gcc12/tsan-applications-hj43droj`.
+The preceding adapted run also passed all three; neither that repeat nor the
+native calibration binary is counted as an additional unique integration case.
+
+Initial large-log execution reached its exact-output/persistence checks but failed
+the native total-thread assertion (4 versus 3), without a sanitizer finding.
+Those failed unittest logs and retained application roots remain as evidence.
+A first main-only calibration attempt did not establish a stable constant overhead
+and was not counted as passing. The final two-application-thread control measures
+native counts [2,2,2,2,2] and TSan [3,3,3,3,3], both exits 0. The ordinary M8 case
+still requires exactly 3; the TSan-only adapter requires exactly 4. This accounts
+for the detector's additional thread without weakening the application owner
+contract, allowing an arbitrary count, disabling a test or suppressing any race.
+All three selected cases then passed, including the original large-log workflow.
+
+Raw `applications.json`, per-case unittest/system/workload logs, configurations,
+SQL terminal facts, binary hashes/flags and process outcomes are retained in the
+unique artifact directory named by the final `validation.json`. The compact
+[cleanup evidence](../validation/M10_TSAN_APPLICATIONS_EVIDENCE.json) records the
+exact commands, final case durations, diagnostic history and regression results.
+CI runs the same extended runner and uploads the retained directory. No selected
+integration case remains unverified and no TSan/fork exclusion was used.
+
 CI pins official checkout/upload-artifact action SHAs, read-only contents permission,
 independent Debug/ASan/TSan trees and a 40-minute bound; TSan selects GCC 12. The
 equivalent repo runner was executed locally. Hosted CI execution is not claimed,
@@ -280,8 +341,9 @@ ctest --test-dir "$BLD" -L m9 --output-on-failure --repeat until-fail:20
 
 473/473 PASS in 72.57s; 7 M10 cases ×20 PASS in 137.92s; 36 M9 cases ×20 PASS in
 514.74s. Baseline before changes was 466/466 PASS in 70.73s. Inventory comparison
-proved all 466 original names and labels unchanged; no accepted test file was
-modified. The seven additions are:
+proved all 466 original names and labels unchanged. Initial delivery modified no
+accepted test file; the final cleanup's equivalent native thread assertion and
+strict TSan-only overhead adaptation are documented in C/G. The seven additions are:
 
 1. `M10Protocol.RepeatedLateFieldRejectionRetainsDiagnosticsAndReleasesDecodedOwners`.
 2. `M10.sanitizer_runtime_probe`.
@@ -322,6 +384,38 @@ regression and final leak-enabled run remain, rather than an invented old log.
 Final configure/build/install were also repeated successfully with the frozen
 code before delivery (`m10-delivery-{configure,build,install}.log`).
 
+### Regression validation after final TSan cleanup
+
+Reconfigured and warning-as-error rebuilt the established Debug tree using the
+same configure/build commands above. Exact final tests:
+
+```bash
+ctest --test-dir /home/nhzj121/build/task_scheduler --output-on-failure
+ctest --test-dir /home/nhzj121/build/task_scheduler -L m10 --output-on-failure
+ASAN_OPTIONS=detect_leaks=1:halt_on_error=1:abort_on_error=1 \
+UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 \
+  ctest --test-dir /home/nhzj121/build/task_scheduler-m10-asan \
+  -R M8Loopback.large_binary_multiple_replenishments_and_paged_cli_are_exact --output-on-failure
+ASAN_OPTIONS=detect_leaks=1:halt_on_error=1:abort_on_error=1 \
+UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 \
+  ctest --test-dir /home/nhzj121/build/task_scheduler-m10-asan -L m10 --output-on-failure
+```
+
+All returned 0: **473/473 in 74.21s**, **7/7 M10 in 7.84s**, **1/1 affected ASan
+M8 in 8.10s**, **7/7 ASan M10 in 9.54s**. All 473 accepted case names and labels
+match the pre-cleanup inventory; the new calibration target is a helper, not a
+new CTest case. All 36 accepted M9 cases are retained and passed in the full run.
+GCC 12's original 30 selected tests also returned 0, followed by the three actual
+application cases above. No case was skipped. No production code, frozen
+semantics or warning flag changed for this cleanup. Full branch and cleanup
+diffs, ownership of temporary artifacts and protected-file hashes were reviewed.
+
+Logs are `m10-tsan-cleanup-final-{configure,build,ctest,m10}.log`,
+`m10-tsan-cleanup-asan-{m8,m10}.log` under the established build, and the TSan
+runner/applications evidence under the separate GCC 12 tree. Earlier failed
+thread-count/calibration attempts are described in G and retained in the cleanup
+evidence, not counted as successful integration coverage.
+
 ## K. Documentation and contract review
 
 Read/reviewed authority: AGENTS, Architecture Gate, Full Implementation Prompt,
@@ -351,13 +445,13 @@ runtime child path, durability ordering or log-credit/wire barrier was changed.
 | 9 | benchmark.measured and cluster.terminal require durable SUCCEEDED, one Attempt, logs_complete and no finalization_pending; verify exact disk/SQLite/downloads. |
 | 10 | No daemon log additions; synthetic environment secret stays out of system logs; task data remains separate. |
 | 11 | Top-level CMake instrumentation precedes every target; strict flags preserved; no sanitizer suppression or global leak-disable. |
-| 12 | ASan/UBSan/LSan full suite and GCC 12 TSan 30 real cases pass; initial incompatible/failed executions are separately disclosed. |
+| 12 | ASan/UBSan/LSan full suite plus affected cleanup checks; GCC 12 TSan 30 component and three actual application cases pass; initial failed executions are separately disclosed. |
 | 13 | Read-only pinned CI + bounded scripts, real test labels, owned temp teardown; no privileged services or deployment in CI. |
 | 14 | Queue/credit saturation, M9 fd/thread/group churn and runtime reaping checks pass; logs have no disk quota and accounting is not enforcement. |
 | 15 | Benchmark explicitly includes taskctl/poll delay, same-host Workers, WSL and durable barriers; no claimed scaling causality/SLA. |
 | 16 | Source map and CLI inspected; normal/LOST semantics distinguished; no auth/TLS/sandbox/exactly-once/power-loss claim. |
 | 17 | Only production change is exception ownership in protocol decoding; no new states, fields, schema, adoption or scheduler logic. |
-| 18 | CTest JSON inventory compares all 466 original names/labels; seven m10 additions only, no accepted source test changes. |
+| 18 | CTest JSON inventory preserves all 473 accepted names/labels; no new CTest case/skip. Native M8 thread assertion stays exactly 3 through a default Harness attribute; TSan-only count is independently calibrated. |
 
 ### Authorization §11 definition-of-done
 
@@ -382,7 +476,8 @@ runtime child path, durability ordering or log-credit/wire barrier was changed.
 
 Runtime-only staged install, actual non-root
 systemd lifecycle of all unit forms, full 473 regressions/additions, 140 M10
-repetitions, 720 M9 fault repetitions, full ASan/UBSan/LSan, practical GCC 12 TSan,
+repetitions, 720 M9 fault repetitions, full ASan/UBSan/LSan, GCC 12 TSan's 30
+component and three actual Controller/Worker integration cases,
 240 correct measured benchmark tasks, documentation and source/ownership review.
 No core semantic contradiction or unexplained sanitizer finding remains.
 

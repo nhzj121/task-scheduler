@@ -876,5 +876,7 @@
     "protocol_leak": "six pre-fix LSan failures in initial 472-test run; repaired by owned field staging; final full 473 pass",
     "initial_raw_log_retention": "runner ctest.log replaced by successful full rerun; diagnostic history retained in acceptance report and dedicated regression",
     "gcc11_tsan": "pre-main mapping failure, then standalone-reproduced timed-CV mutex warning; resolved by actual GCC12 test execution"
-  }
+  },
+  "tsan_final_acceptance_supplement": "M10_TSAN_APPLICATIONS_EVIDENCE.json",
+  "tsan_scope_note": "The tsan_runner entry above is historical component-only evidence. Independent review required actual Controller/Worker integration coverage; final acceptance additionally requires the three instrumented application cases and strict calibration in the linked supplement."
 }
