@@ -1,5 +1,46 @@
 # Interview Notes
 
+Implementation navigation and measured claims: see `ARCHITECTURE_IMPLEMENTED.md`,
+`DEVELOPMENT.md`, `OPERATIONS.md` and the M10 benchmark/acceptance reports. The
+tradeoffs below remain frozen; installation tooling and instrumentation do not
+change scheduling, durability or failure semantics. Do not present measured
+same-host Workers as CPU/memory isolation, or process crash tests as power loss.
+
+## Implemented engineering discussion (M10 source/evidence map)
+
+These observations describe the accepted implementation; the original design
+notes below remain the authority for semantics.
+
+| Decision and reason | Cost/limit and implementation evidence |
+|---|---|
+| One Controller EventLoop owns decisions, making state/effect ordering reviewable without shared mutable Task state. | It is a serial decision bottleneck. `controller/application.cpp` composes TaskManager, transport and asynchronous completion handling; it does not block for SQLite/log writes. |
+| Separate PersistenceThread and LogWriterThread prevent high-volume output from occupying the metadata queue. | Neither queue is infinite; log saturation eventually blocks workload writes. `storage/persistence_thread.cpp`, `logs/writer.cpp`, and M8 stalled-writer tests exercise real owners. |
+| eventfd signals already-published bounded completions rather than carrying the data. | Wakeup errors cannot erase committed results. `persistence/channel.cpp` and M5/M8 notification-failure tests verify retained completion ownership. |
+| Durable state precedes irreversible effects, and matching completion versions/generations gate later actions. | SQLite, memory, TCP and files are not one ACID transaction. M9 held commit tests prove no early cancel command, LOST resource release or replacement acknowledgement. |
+| Task identity survives FAILED-only manual retry, while each execution has a distinct Attempt and immutable history. | LOST does not prove remote execution stopped; manual retry can overlap unknowable work. `controller/task_manager.cpp` and M9 retry-history tests retain exact old logs. |
+| Stable Worker identity is separate from Session UUID and connection generation. | Heartbeats express suspicion, not host death. M9 disconnect churn checks old group reaping before fresh REGISTER and fences stale input. |
+| Placement minimizes projected dominant CPU/memory utilization after feasibility filtering. | It is neither fairness nor actual resource enforcement. `scheduler/scheduler.cpp` compares continued fractions exactly without overflowing cross-products; lexical worker_id resolves ties; starvation remains possible. |
+| Parent-side PATH/env/argv preparation keeps the child path async-signal-safe until direct execve. | Arbitrary trusted executables inherit service privileges; there is no shell by default and no sandbox. `runtime/prepared_exec.cpp` and runtime tests cover closed stdio, exec errors and cwd. |
+| The direct leader's natural outcome is frozen; same-pgid cleanup uses TERM/grace/KILL and then drains/reaps. | Deliberately escaped groups and uninterruptible processes have no finite cleanup guarantee. Runtime and M9 first-cause tests cover cancellation/timeout races. |
+| Log credit reserves Controller byte and slot capacity before transmission. | One shared TCP stream still has finite queues and head-of-line effects. M8 tests verify independent byte/slot exhaustion and that FINISH cannot overtake prior log frames. |
+| Normal terminal visibility follows exact tails, both fdatasync calls, required creation-directory fsyncs and terminal SQLite commit. | File sync alone does not establish namespace durability, and process crashes do not validate physical power loss. LogWriter fault tests hold/fail every required barrier. |
+| Logs are finite independently paged stdout/stderr snapshots. | `--both` concatenates streams; it provides neither merged timestamp order nor live follow. M8 paging/snapshot tests and M10 binary downloads check exact bytes. |
+
+Validation itself needs scrutiny. M10 LSan found retained decoded fields on a
+late validation exception; staging field ownership fixes cleanup without changing
+the wire contract. GCC 11 TSan's timed-condition-variable diagnostic also
+reproduced in a standalone standard-library program; the same probe and real
+thread-handoff suites passed with GCC 12. No project race/leak was suppressed.
+
+Benchmark numbers include taskctl process creation, batching and polling delay.
+They describe first observed durable terminal completion on shared-host WSL
+Workers, not workload execution time, saturation capacity or scaling causality.
+Use the raw per-run results and experimental limitations in the benchmark report
+when discussing performance. Dedicated non-root systemd users reduce privileges;
+they do not add authentication, tenant isolation or enforced CPU/memory limits.
+
+## Original architecture-phase notes
+
 This file maps the planned implementation to systems concepts. It describes the approved v1
 design, not features already implemented during the architecture phase.
 

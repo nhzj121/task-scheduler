@@ -1,0 +1,7 @@
+{
+  "client_listen": {"address": "127.0.0.1", "port": 7420},
+  "worker_listen": {"address": "127.0.0.1", "port": 7421},
+  "data_dir": "/var/lib/task-scheduler/controller",
+  "termination_grace_ms": 2000,
+  "logging": {"level": "info", "destination": "journald"}
+}
