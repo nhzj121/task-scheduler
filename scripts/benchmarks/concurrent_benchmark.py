@@ -137,25 +137,29 @@ def measured(cluster, args, workload, record):
 
         record["resources_before"] = m.snapshot(cluster.records)
         with ThreadPoolExecutor(max_workers=args.clients + args.observers + 1) as pool:
-            futures = [pool.submit(submit, c, i) for i, c in enumerate(clients)]
-            futures += [pool.submit(observe, c, i) for i, c in enumerate(observers)]
-            sampler = pool.submit(sample_resources)
-            record["batch_start_ns"] = m.now()
-            record["deadline_ns"] = record["batch_start_ns"] + int(args.timeout * 1e9)
-            for sample in samples:
-                sample["queued_ns"] = record["batch_start_ns"]
-            begin_event.set()
+            sampler = None
             try:
+                futures = [pool.submit(submit, c, i) for i, c in enumerate(clients)]
+                futures += [pool.submit(observe, c, i) for i, c in enumerate(observers)]
+                sampler = pool.submit(sample_resources)
+                record["batch_start_ns"] = m.now()
+                record["deadline_ns"] = record["batch_start_ns"] + int(args.timeout * 1e9)
+                for sample in samples:
+                    sample["queued_ns"] = record["batch_start_ns"]
+                begin_event.set()
                 while not all(f.done() for f in futures):
                     time.sleep(.05)
                 for future in futures:
                     future.result()
             except BaseException:
                 abort.set()
+                begin_event.set()
                 raise
             finally:
                 sample_stop.set()
-                sampler.result()
+                begin_event.set()
+                if sampler is not None:
+                    sampler.result()
         end = max((s.get("terminal_observed_ns", m.now()) for s in samples), default=m.now())
         record["batch_observation_end_ns"] = end
         record["elapsed_seconds"] = (end - record["batch_start_ns"]) / 1e9

@@ -13,6 +13,7 @@ from unittest import mock
 SOURCE = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(SOURCE / "scripts/benchmarks"))
 import measurement_support as m
+import concurrent_benchmark as concurrent
 from fault_proxy import FaultProxy
 
 
@@ -98,6 +99,28 @@ class MeasurementHarness(unittest.TestCase):
         finally:
             cluster.close()
         self.assertEqual(record["exit_code"],0)
+
+    def test_interrupt_before_batch_release_does_not_strand_threads(self):
+        cluster = m.ManagedCluster(BIN, ROOT / "pool-interrupt")
+        try:
+            cluster.start_controller(); cluster.start_worker("fixture-worker"); cluster.healthy(1)
+            original = concurrent.ThreadPoolExecutor.submit
+            first = True
+            def interrupted(executor, *args, **kwargs):
+                nonlocal first
+                future = original(executor, *args, **kwargs)
+                if first:
+                    first = False
+                    raise KeyboardInterrupt("fixture: before start-event release")
+                return future
+            args = argparse.Namespace(tasks=20, clients=2, observers=1, bytes=0, poll_ms=10, resource_ms=50, timeout=10)
+            record = dict(workers=1, errors=[], resource_samples=[])
+            with mock.patch.object(concurrent.ThreadPoolExecutor, "submit", new=interrupted):
+                with self.assertRaises(KeyboardInterrupt): concurrent.measured(cluster,args,"true",record)
+            m.no_worker_children(cluster)
+        finally:
+            cluster.close()
+        self.assertTrue(all(r["exit_code"] == 0 for r in cluster.records))
 
 
 if __name__ == "__main__":
