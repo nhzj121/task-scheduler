@@ -244,6 +244,9 @@ exit/restart times, relative durations, states, log completeness and cleanup sta
 The raw proxy events prove heartbeat drops with no deliberate close and first
 closure from the Controller; raw SQL views preserve the old Attempt binding.
 
+Published CSV byte counts/hashes in the summary refer to Git's LF-normalized blobs
+(`git show HEAD:docs/benchmarks/<name>`), before checkout-specific CRLF conversion.
+
 ## Interpretation and limits
 
 Four Workers improved these sleep/binary measurements relative to one; /bin/true
