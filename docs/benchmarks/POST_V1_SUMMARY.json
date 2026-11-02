@@ -1,0 +1,756 @@
+{
+  "review_date": "2026-11-02 Asia/Shanghai",
+  "accepted_main": "124e388665cc2b82db6d1aa212cfb093dc9e4428",
+  "acquisition_harness": "3767b88e95335adb36a7a413a50602fdb11e242b",
+  "environment": {
+    "kernel": {
+      "system": "Linux",
+      "node": "<hostname omitted>",
+      "release": "6.18.54.1-microsoft-standard-WSL2",
+      "version": "#1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026",
+      "machine": "x86_64",
+      "processor": "x86_64"
+    },
+    "cpu_model": "13th Gen Intel(R) Core(TM) i7-13650HX",
+    "logical_cpus": 20,
+    "mem_total": "MemTotal:       12105608 kB",
+    "filesystem": "ext4   rw,relatime,discard,errors=remount-ro,data=ordered",
+    "compiler": "c++ (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0",
+    "cmake": "cmake version 3.22.1",
+    "sqlite": "3.37.2",
+    "clock_ticks": 100,
+    "build_type": "Release",
+    "python": "3.10.12",
+    "clock": "clock_gettime(CLOCK_MONOTONIC)",
+    "clock_resolution_seconds": 1e-09,
+    "source_commit": "124e388665cc2b82db6d1aa212cfb093dc9e4428",
+    "mount": "/      ext4   rw,relatime,discard,errors=remount-ro,data=ordered",
+    "binaries": {
+      "controller": "058d0ffd734d791bec94c42ed675f0a14013ba693f08e8984918b3a3162ac001",
+      "worker": "05139ece5e6a89707e9685a223328bbe6dff14fd6699ac9c53d6f1b4a892d0e3",
+      "taskctl": "49e0274cfa2aa9688cdf24f89888b261a767c42308a19c977d3cbfb6e749d366"
+    }
+  },
+  "release_flags": [
+    "CXX_FLAGS = -O3 -DNDEBUG -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow -Werror -std=c++17"
+  ],
+  "parameters": {
+    "concurrent": {
+      "workers": [
+        1,
+        2,
+        4
+      ],
+      "workloads": [
+        "true",
+        "sleep",
+        "binary"
+      ],
+      "clients": 8,
+      "observers": 2,
+      "bytes": 32768,
+      "tasks": 120,
+      "repeats": 5,
+      "poll_ms": 10,
+      "resource_ms": 50,
+      "timeout": 120
+    },
+    "recovery": {
+      "scenarios": [
+        "disconnect",
+        "sigterm",
+        "heartbeat"
+      ],
+      "repeats": 20,
+      "poll_ms": 10,
+      "timeout": 15,
+      "heartbeat_ms": 100,
+      "offline_ms": 1500
+    }
+  },
+  "raw_manifests": {
+    "concurrent": {
+      "path": "/home/nhzj121/build/post-v1-concurrent-formal/results.json",
+      "sha256": "86e531afdc9e027e891eb064479b927f9ad26aaa87e4408078ca894c0832be51",
+      "bytes": 97826981
+    },
+    "recovery": {
+      "path": "/home/nhzj121/build/post-v1-recovery-formal/results.json",
+      "sha256": "768ad9049c25c6c8f262c48c7e44488091b944cb4b320c455ca1cf6060fa7c64",
+      "bytes": 3545174
+    }
+  },
+  "harness_sha256": {
+    "concurrent_benchmark.py": "c0d66aaff00f03b073b23499895ad7340059bd767ac48da89dbf483f2494e1aa",
+    "fault_proxy.py": "56567d6ef9d90d1870e6a8a549358585c4a205d8118d7e0f51172a0838830649",
+    "measurement_support.py": "f8ab95bee2872e94319135b0ed9f1a4ade295f5557d06c1a4234d431b2c1b11f",
+    "recovery_benchmark.py": "accbac6cf3ee8d03fbab8d1bfda815ed22f62119b6fc16259b402acc48580659"
+  },
+  "formal_concurrent": [
+    {
+      "workers": 1,
+      "workload": "true",
+      "measured_tasks": 600,
+      "repetitions": 5,
+      "all_successful": true,
+      "throughput": {
+        "median": 22.936099212216437,
+        "minimum": 22.12891683688225,
+        "maximum": 24.03786439110557
+      },
+      "durable_submit_observed_ms": {
+        "p50": 67.93067,
+        "p95": 84.350121,
+        "minimum": 16.946517,
+        "maximum": 90.754977
+      },
+      "durable_completion_observed_ms": {
+        "p50": 2767.611874,
+        "p95": 4175.720274,
+        "minimum": 644.202747,
+        "maximum": 4463.876238
+      },
+      "get_task_observed_roundtrip_ms": {
+        "p50": 0.835152,
+        "p95": 7.9058,
+        "minimum": 0.223724,
+        "maximum": 1048.567096
+      },
+      "already_succeeded_on_first_poll": 40,
+      "rates": [
+        23.581341350828517,
+        22.936099212216437,
+        22.19152738646723,
+        24.03786439110557,
+        22.12891683688225
+      ]
+    },
+    {
+      "workers": 1,
+      "workload": "sleep",
+      "measured_tasks": 600,
+      "repetitions": 5,
+      "all_successful": true,
+      "throughput": {
+        "median": 8.656149936547795,
+        "minimum": 8.632934045697535,
+        "maximum": 8.666205097890916
+      },
+      "durable_submit_observed_ms": {
+        "p50": 65.495862,
+        "p95": 72.595792,
+        "minimum": 19.650329,
+        "maximum": 77.396921
+      },
+      "durable_completion_observed_ms": {
+        "p50": 6801.973704,
+        "p95": 12386.231283,
+        "minimum": 605.811507,
+        "maximum": 12997.884183
+      },
+      "get_task_observed_roundtrip_ms": {
+        "p50": 0.552511,
+        "p95": 1.633336,
+        "minimum": 0.217685,
+        "maximum": 742.3786
+      },
+      "already_succeeded_on_first_poll": 15,
+      "rates": [
+        8.666205097890916,
+        8.658333001286865,
+        8.647484305865031,
+        8.632934045697535,
+        8.656149936547795
+      ]
+    },
+    {
+      "workers": 1,
+      "workload": "binary",
+      "measured_tasks": 600,
+      "repetitions": 5,
+      "all_successful": true,
+      "throughput": {
+        "median": 18.29414749882994,
+        "minimum": 17.7290706206393,
+        "maximum": 18.494734290221295
+      },
+      "durable_submit_observed_ms": {
+        "p50": 66.01076,
+        "p95": 78.628294,
+        "minimum": 25.66703,
+        "maximum": 89.319381
+      },
+      "durable_completion_observed_ms": {
+        "p50": 3235.423138,
+        "p95": 5405.211705,
+        "minimum": 703.373815,
+        "maximum": 5806.150351
+      },
+      "get_task_observed_roundtrip_ms": {
+        "p50": 0.565682,
+        "p95": 3.068531,
+        "minimum": 0.233086,
+        "maximum": 746.728738
+      },
+      "already_succeeded_on_first_poll": 38,
+      "rates": [
+        17.7290706206393,
+        18.222514332569006,
+        18.494734290221295,
+        18.29414749882994,
+        18.339357388137696
+      ]
+    },
+    {
+      "workers": 2,
+      "workload": "true",
+      "measured_tasks": 600,
+      "repetitions": 5,
+      "all_successful": true,
+      "throughput": {
+        "median": 32.782278950562095,
+        "minimum": 31.63146493148948,
+        "maximum": 33.66635813310439
+      },
+      "durable_submit_observed_ms": {
+        "p50": 85.530059,
+        "p95": 108.225689,
+        "minimum": 13.192952,
+        "maximum": 123.157977
+      },
+      "durable_completion_observed_ms": {
+        "p50": 2008.055424,
+        "p95": 2462.649024,
+        "minimum": 774.22432,
+        "maximum": 2550.198995
+      },
+      "get_task_observed_roundtrip_ms": {
+        "p50": 1.218987,
+        "p95": 24.019903,
+        "minimum": 0.243768,
+        "maximum": 1039.258363
+      },
+      "already_succeeded_on_first_poll": 108,
+      "rates": [
+        31.63146493148948,
+        32.11550699214162,
+        32.782278950562095,
+        33.66635813310439,
+        33.52618292212283
+      ]
+    },
+    {
+      "workers": 2,
+      "workload": "sleep",
+      "measured_tasks": 600,
+      "repetitions": 5,
+      "all_successful": true,
+      "throughput": {
+        "median": 15.970948034201626,
+        "minimum": 15.723084253964958,
+        "maximum": 16.09617069673968
+      },
+      "durable_submit_observed_ms": {
+        "p50": 78.765486,
+        "p95": 100.42581,
+        "minimum": 17.615353,
+        "maximum": 122.284188
+      },
+      "durable_completion_observed_ms": {
+        "p50": 3649.89502,
+        "p95": 6172.311911,
+        "minimum": 715.386201,
+        "maximum": 6524.931977
+      },
+      "get_task_observed_roundtrip_ms": {
+        "p50": 0.64104,
+        "p95": 3.294791,
+        "minimum": 0.224928,
+        "maximum": 930.335919
+      },
+      "already_succeeded_on_first_poll": 59,
+      "rates": [
+        15.723084253964958,
+        16.03659118188851,
+        16.09617069673968,
+        15.912593325732129,
+        15.970948034201626
+      ]
+    },
+    {
+      "workers": 2,
+      "workload": "binary",
+      "measured_tasks": 600,
+      "repetitions": 5,
+      "all_successful": true,
+      "throughput": {
+        "median": 29.406259327994746,
+        "minimum": 27.717122070542633,
+        "maximum": 30.834175797532048
+      },
+      "durable_submit_observed_ms": {
+        "p50": 79.93472,
+        "p95": 102.384149,
+        "minimum": 16.8119,
+        "maximum": 114.940878
+      },
+      "durable_completion_observed_ms": {
+        "p50": 2003.998869,
+        "p95": 2992.798322,
+        "minimum": 758.135913,
+        "maximum": 3237.612267
+      },
+      "get_task_observed_roundtrip_ms": {
+        "p50": 0.57983,
+        "p95": 8.490396,
+        "minimum": 0.240301,
+        "maximum": 1043.465787
+      },
+      "already_succeeded_on_first_poll": 93,
+      "rates": [
+        29.32599964114165,
+        30.834175797532048,
+        29.406259327994746,
+        27.717122070542633,
+        30.54682424505941
+      ]
+    },
+    {
+      "workers": 4,
+      "workload": "true",
+      "measured_tasks": 600,
+      "repetitions": 5,
+      "all_successful": true,
+      "throughput": {
+        "median": 32.27452630311294,
+        "minimum": 31.815573857028426,
+        "maximum": 34.66061999056919
+      },
+      "durable_submit_observed_ms": {
+        "p50": 107.620615,
+        "p95": 155.209794,
+        "minimum": 16.300322,
+        "maximum": 176.257795
+      },
+      "durable_completion_observed_ms": {
+        "p50": 1831.469951,
+        "p95": 2131.106156,
+        "minimum": 1129.198425,
+        "maximum": 2209.418798
+      },
+      "get_task_observed_roundtrip_ms": {
+        "p50": 4.233285,
+        "p95": 25.300953,
+        "minimum": 0.265167,
+        "maximum": 1356.2998
+      },
+      "already_succeeded_on_first_poll": 175,
+      "rates": [
+        34.66061999056919,
+        32.27452630311294,
+        31.815573857028426,
+        32.08201348397723,
+        32.818952536822245
+      ]
+    },
+    {
+      "workers": 4,
+      "workload": "sleep",
+      "measured_tasks": 600,
+      "repetitions": 5,
+      "all_successful": true,
+      "throughput": {
+        "median": 27.84463586812765,
+        "minimum": 26.62101423020548,
+        "maximum": 28.378489055444426
+      },
+      "durable_submit_observed_ms": {
+        "p50": 97.024565,
+        "p95": 154.598084,
+        "minimum": 15.657588,
+        "maximum": 177.653588
+      },
+      "durable_completion_observed_ms": {
+        "p50": 2034.943049,
+        "p95": 2807.796489,
+        "minimum": 986.098641,
+        "maximum": 2944.109286
+      },
+      "get_task_observed_roundtrip_ms": {
+        "p50": 0.644171,
+        "p95": 6.195242,
+        "minimum": 0.229955,
+        "maximum": 1356.094796
+      },
+      "already_succeeded_on_first_poll": 120,
+      "rates": [
+        27.67566447376348,
+        28.174867188295575,
+        26.62101423020548,
+        27.84463586812765,
+        28.378489055444426
+      ]
+    },
+    {
+      "workers": 4,
+      "workload": "binary",
+      "measured_tasks": 600,
+      "repetitions": 5,
+      "all_successful": true,
+      "throughput": {
+        "median": 34.23799862609873,
+        "minimum": 33.47349345213418,
+        "maximum": 36.07957500358072
+      },
+      "durable_submit_observed_ms": {
+        "p50": 107.542521,
+        "p95": 140.588483,
+        "minimum": 14.720809,
+        "maximum": 152.048102
+      },
+      "durable_completion_observed_ms": {
+        "p50": 1705.607578,
+        "p95": 2013.667333,
+        "minimum": 1118.860817,
+        "maximum": 2083.406871
+      },
+      "get_task_observed_roundtrip_ms": {
+        "p50": 0.609299,
+        "p95": 21.291156,
+        "minimum": 0.246954,
+        "maximum": 1358.575277
+      },
+      "already_succeeded_on_first_poll": 184,
+      "rates": [
+        36.07957500358072,
+        33.47349345213418,
+        35.80426392877683,
+        34.23799862609873,
+        33.96787396776079
+      ]
+    }
+  ],
+  "formal_recovery": [
+    {
+      "scenario": "disconnect",
+      "samples": 20,
+      "measurement_failures": 0,
+      "lost_ms": {
+        "p50": 9.625438,
+        "p95": 11.068017,
+        "minimum": 6.00794,
+        "maximum": 11.123036
+      },
+      "release_ms": {
+        "p50": 9.998203,
+        "p95": 11.547375,
+        "minimum": 6.272335,
+        "maximum": 11.735068
+      },
+      "healthy_ms": {
+        "p50": 114.109883,
+        "p95": 121.834344,
+        "minimum": 104.966672,
+        "maximum": 128.050994
+      },
+      "group_absent_ms": {
+        "p50": 11.3447,
+        "p95": 12.693858,
+        "minimum": 7.318191,
+        "maximum": 18.793409
+      },
+      "restart_to_healthy_ms": null
+    },
+    {
+      "scenario": "sigterm",
+      "samples": 20,
+      "measurement_failures": 0,
+      "lost_ms": {
+        "p50": 10.443239,
+        "p95": 11.561987,
+        "minimum": 5.813015,
+        "maximum": 11.790595
+      },
+      "release_ms": {
+        "p50": 10.710098,
+        "p95": 12.015356,
+        "minimum": 5.980043,
+        "maximum": 12.320288
+      },
+      "healthy_ms": {
+        "p50": 25.711535,
+        "p95": 29.341619,
+        "minimum": 22.287822,
+        "maximum": 32.985573
+      },
+      "group_absent_ms": {
+        "p50": 11.877771,
+        "p95": 17.334256,
+        "minimum": 8.780129,
+        "maximum": 19.640051
+      },
+      "restart_to_healthy_ms": {
+        "p50": 13.994199,
+        "p95": 14.696955,
+        "minimum": 11.810498,
+        "maximum": 14.718994
+      }
+    },
+    {
+      "scenario": "heartbeat",
+      "samples": 20,
+      "measurement_failures": 0,
+      "lost_ms": {
+        "p50": 1492.307157,
+        "p95": 1517.169859,
+        "minimum": 1484.158529,
+        "maximum": 1518.54752
+      },
+      "release_ms": {
+        "p50": 1492.772494,
+        "p95": 1517.448643,
+        "minimum": 1484.673177,
+        "maximum": 1518.680025
+      },
+      "healthy_ms": {
+        "p50": 1606.141931,
+        "p95": 1631.947188,
+        "minimum": 1597.050313,
+        "maximum": 1634.656928
+      },
+      "group_absent_ms": {
+        "p50": 1504.692641,
+        "p95": 1530.708602,
+        "minimum": 1491.193395,
+        "maximum": 1531.568669
+      },
+      "restart_to_healthy_ms": null
+    }
+  ],
+  "totals": {
+    "concurrent_runs": 45,
+    "measured_tasks": 5400,
+    "succeeded": 5400,
+    "failed": 0,
+    "incomplete": 0,
+    "recovery_samples": 60,
+    "recovery_validation_failures": 0,
+    "expected_lost_failed_tasks": 60,
+    "recovery_incomplete_logs_expected": 60,
+    "cleanup_errors": 0
+  },
+  "note": "Client/proxy monotonic observations, not scheduler latency, exact commit timestamps, physical Worker death, resource enforcement or SLA. Every formal repetition is retained in the CSVs. Large raw logs/databases are Linux-local, never committed.",
+  "status": "PASS",
+  "published_harness_guard_fix": "d23915b62d83fda54d933fe17fd809ef13bff949",
+  "guard_fix_note": "After acquisition only: releases waiting client futures if interrupted before batch start; acquisition had no interruption. Formal source hashes match 3767b88 exactly; post-fix pilot 3 is validation only.",
+  "pilots": [
+    {
+      "iteration": 1,
+      "kind": "concurrent",
+      "status": "PASS",
+      "runs": 9,
+      "path": "/home/nhzj121/build/post-v1-concurrent-pilot-1/results.json",
+      "sha256": "eb22923037a5b823698e0c1c07076a5a96db14b7d7f3bb87b0f869732cf3fda6",
+      "included_in_formal_statistics": false
+    },
+    {
+      "iteration": 1,
+      "kind": "recovery",
+      "status": "PASS",
+      "runs": 6,
+      "path": "/home/nhzj121/build/post-v1-recovery-pilot-1/results.json",
+      "sha256": "a620000ec0f567c441730141385a7a9675033a64995cd67a31466204188a9026",
+      "included_in_formal_statistics": false
+    },
+    {
+      "iteration": 2,
+      "kind": "concurrent",
+      "status": "PASS",
+      "runs": 9,
+      "path": "/home/nhzj121/build/post-v1-concurrent-pilot-2/results.json",
+      "sha256": "a45fc5e6d4ff0bb421e38d5a687dff73363c493fd8bda9a656afc9cd6dbb4f62",
+      "included_in_formal_statistics": false
+    },
+    {
+      "iteration": 2,
+      "kind": "recovery",
+      "status": "PASS",
+      "runs": 6,
+      "path": "/home/nhzj121/build/post-v1-recovery-pilot-2/results.json",
+      "sha256": "3ec03480cf7ccda4ada98079712605fbe1157d1cde84d9781da33204bd669acf",
+      "included_in_formal_statistics": false
+    },
+    {
+      "iteration": 3,
+      "kind": "concurrent",
+      "status": "PASS",
+      "runs": 9,
+      "path": "/home/nhzj121/build/post-v1-concurrent-pilot-3/results.json",
+      "sha256": "5a57e4ee1acf8fed186428dc47a670b9144d84c05f9634a5fba45eec3dd25d2e",
+      "included_in_formal_statistics": false
+    },
+    {
+      "iteration": 3,
+      "kind": "recovery",
+      "status": "PASS",
+      "runs": 6,
+      "path": "/home/nhzj121/build/post-v1-recovery-pilot-3/results.json",
+      "sha256": "126e42ff13aaf07025bc83c8d7057a0a825473ce9101b08f184445b927ec00aa",
+      "included_in_formal_statistics": false
+    }
+  ],
+  "validation": {
+    "harness_tests": 7,
+    "harness_test_seconds": 0.282,
+    "harness_exit_code": 0,
+    "ctest": 473,
+    "ctest_exit_code": 0,
+    "ctest_seconds": 81.84,
+    "all_473_names_and_labels_preserved": true,
+    "logs": [
+      "/home/nhzj121/build/post-v1-configure.log",
+      "/home/nhzj121/build/post-v1-build.log",
+      "/home/nhzj121/build/post-v1-harness-tests-2.log",
+      "/home/nhzj121/build/post-v1-regression-configure.log",
+      "/home/nhzj121/build/post-v1-regression-build.log",
+      "/home/nhzj121/build/post-v1-regression-ctest.log"
+    ],
+    "protected_sha256": {
+      "build_note": "8bda49a0af4e612892bafdba48effb924573e02a6ccea33b3aa8bd5991d813ae",
+      "personal_notes": "4b2e5a53c77198e9278ebdd3cf40be93ec4468d5707435f4729d26b4dabbc882"
+    },
+    "post_collection_application_scan": [],
+    "published_harness_matches_post_fix_pilot": true,
+    "production_architecture_cmake_ci_changes": false,
+    "all_started_frames_match_verified_workload_leaders": true,
+    "formal_applications_tracked_and_cleaned": 290
+  },
+  "published_artifacts": {
+    "POST_V1_CONCURRENT_REPETITIONS.csv": {
+      "bytes": 8429,
+      "sha256": "e464377c19d3315ad08dc8890dc011ca6d0d9739fc9fc9e2efad38c8498e68e2"
+    },
+    "POST_V1_RECOVERY_REPETITIONS.csv": {
+      "bytes": 22927,
+      "sha256": "1eefb0fa7d8c9f86ab8d528dd5c6e95349b9ec6ef66fdbde05583d6cd5433854"
+    }
+  },
+  "configuration": {
+    "concurrent": {
+      "controller_example": {
+        "client_listen": {
+          "address": "127.0.0.1",
+          "port": 36593
+        },
+        "worker_listen": {
+          "address": "127.0.0.1",
+          "port": 55987
+        },
+        "data_dir": "<independent ext4 data root>/data",
+        "heartbeat": {
+          "interval_ms": 3000,
+          "offline_timeout_ms": 10000
+        },
+        "dispatch": {
+          "ack_timeout_ms": 5000,
+          "start_timeout_ms": 10000
+        },
+        "termination_grace_ms": 200,
+        "protocol": {
+          "max_payload_bytes": 4194304
+        },
+        "queues": {
+          "persistence_commands": 4096,
+          "log_bytes": 67108864,
+          "log_commands": 4096,
+          "log_control_reserve": 128,
+          "initial_session_log_window_bytes": 1048576,
+          "initial_session_log_window_chunks": 64
+        },
+        "logging": {
+          "level": "info",
+          "destination": "stderr"
+        }
+      },
+      "worker_example": {
+        "worker_id": "bench-worker-1",
+        "controller": {
+          "address": "127.0.0.1",
+          "port": 55987
+        },
+        "capacity": {
+          "cpu_slots": 2,
+          "memory_mb": 512
+        },
+        "max_concurrent_tasks": 2,
+        "reconnect": {
+          "initial_backoff_ms": 100,
+          "max_backoff_ms": 500
+        },
+        "logging": {
+          "level": "info",
+          "destination": "stderr"
+        }
+      },
+      "note": "Dynamic numeric loopback ports shown for first repetition only; all actual configurations remain in raw evidence."
+    },
+    "recovery": {
+      "controller_example": {
+        "client_listen": {
+          "address": "127.0.0.1",
+          "port": 45809
+        },
+        "worker_listen": {
+          "address": "127.0.0.1",
+          "port": 36477
+        },
+        "data_dir": "<independent ext4 data root>/data",
+        "heartbeat": {
+          "interval_ms": 100,
+          "offline_timeout_ms": 1500
+        },
+        "dispatch": {
+          "ack_timeout_ms": 5000,
+          "start_timeout_ms": 10000
+        },
+        "termination_grace_ms": 200,
+        "protocol": {
+          "max_payload_bytes": 4194304
+        },
+        "queues": {
+          "persistence_commands": 4096,
+          "log_bytes": 67108864,
+          "log_commands": 4096,
+          "log_control_reserve": 128,
+          "initial_session_log_window_bytes": 1048576,
+          "initial_session_log_window_chunks": 64
+        },
+        "logging": {
+          "level": "info",
+          "destination": "stderr"
+        }
+      },
+      "worker_example": {
+        "worker_id": "recovery-worker",
+        "controller": {
+          "address": "127.0.0.1",
+          "port": 39303
+        },
+        "capacity": {
+          "cpu_slots": 2,
+          "memory_mb": 512
+        },
+        "max_concurrent_tasks": 2,
+        "reconnect": {
+          "initial_backoff_ms": 100,
+          "max_backoff_ms": 500
+        },
+        "logging": {
+          "level": "info",
+          "destination": "stderr"
+        }
+      },
+      "note": "Dynamic numeric loopback ports shown for first repetition only; all actual configurations remain in raw evidence."
+    }
+  }
+}
