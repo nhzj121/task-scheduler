@@ -7,6 +7,17 @@
 #include "ts/protocol/messages.h"
 
 namespace ts::worker {
+enum class ExecutionLifecycleKind { Started, Finished };
+struct ExecutionLifecycleEvent {
+    ExecutionLifecycleKind kind;
+    std::string task_id, attempt_id, worker_id, session_id, executable;
+    std::uint32_t attempt_no;
+    std::optional<std::int32_t> pid;
+    std::optional<protocol::Outcome> outcome;
+    std::optional<std::int32_t> exit_code, term_signal;
+};
+// Owner-thread, non-reentrant, best-effort value snapshots; never terminal proof.
+using ExecutionLifecycleObserver = std::function<void(const ExecutionLifecycleEvent&)>;
 // One owner thread. Sends own their bytes; room() returns a transport value snapshot.
 // The runtime keeps SIGCHLD/process ownership; this adapter never owns a child fd.
 class ExecutionManager final {
@@ -14,7 +25,8 @@ public:
     using Send = std::function<common::Result<void>(net::Outbound)>;
     using Room = std::function<std::optional<net::ConnectionSnapshot>()>;
     static common::Result<std::unique_ptr<ExecutionManager>> create(
-        domain::WorkerConfig config, domain::SessionId session, Send send, Room room);
+        domain::WorkerConfig config, domain::SessionId session, Send send, Room room,
+        ExecutionLifecycleObserver observer = {});
     ~ExecutionManager();
     [[nodiscard]] common::Result<void> activate(const protocol::RegistrationAccepted& ack);
     [[nodiscard]] common::Result<void> grant(const protocol::LogWindowUpdate& window);

@@ -178,6 +178,12 @@ if(BUILD_TESTING)
   find_package(GTest 1.11 REQUIRED)
   include(GoogleTest)
 
+  add_executable(ts_observability_tests tests/component/lifecycle_observer_test.cpp
+    tests/component/execution_observer_test.cpp)
+  target_link_libraries(ts_observability_tests PRIVATE ts_controller ts_worker GTest::gtest_main)
+  ts_enable_project_warnings(ts_observability_tests)
+  gtest_discover_tests(ts_observability_tests PROPERTIES LABELS "observability;component" TIMEOUT 20)
+
   add_executable(ts_milestone8_tests tests/component/log_writer_test.cpp tests/unit/log_credit_test.cpp tests/component/log_coordinator_test.cpp)
   target_link_libraries(ts_milestone8_tests PRIVATE ts_logs ts_controller GTest::gtest_main)
   ts_enable_project_warnings(ts_milestone8_tests)
@@ -193,6 +199,15 @@ if(BUILD_TESTING)
   target_link_libraries(ts_m7_fault_controller PRIVATE ts_controller)
   ts_enable_project_warnings(ts_m7_fault_controller)
   find_program(TS_PYTHON_EXECUTABLE NAMES python3 REQUIRED)
+  foreach(lifecycle_case IN ITEMS normal_correlated_pid_and_committed_versions
+      terminal_waits_for_file_barrier_and_metadata_commit cancel_timeout_and_launch_failure_remain_distinct
+      disconnect_cleanup_is_local_and_recovery_does_not_replay binary_logs_exact_and_payloads_not_mirrored
+      info_disabled_keeps_cli_and_workload_output_unchanged)
+    add_test(NAME LifecycleLogging.${lifecycle_case}
+      COMMAND ${TS_PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/integration/lifecycle_logging.py
+      --bin $<TARGET_FILE_DIR:controller> --case test_${lifecycle_case})
+    set_tests_properties(LifecycleLogging.${lifecycle_case} PROPERTIES LABELS "observability;integration" TIMEOUT 45)
+  endforeach()
   add_executable(ts_sanitizer_probe tests/helpers/sanitizer_probe.cpp)
   target_link_libraries(ts_sanitizer_probe PRIVATE Threads::Threads)
   ts_enable_project_warnings(ts_sanitizer_probe)

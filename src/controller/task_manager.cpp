@@ -76,8 +76,10 @@ struct TaskManager::Call {
     }
     ~Call() { if (entered) manager.inside_ = false; }
 };
-TaskManager::TaskManager(PersistencePort& persistence, EffectPort& effects, DecisionLimits limits)
+TaskManager::TaskManager(PersistencePort& persistence, EffectPort& effects, DecisionLimits limits,
+                         TaskLifecycleObserver observer)
     : persistence_(persistence), effects_(effects), limits_(std::move(limits)),
+      observer_(std::move(observer)),
       workers_(limits_.offline_timeout_ms), owner_(std::this_thread::get_id()) {
     if (!limits_.pending_count || !limits_.essential_count || limits_.essential_count >= limits_.pending_count ||
         !limits_.pending_bytes || !limits_.essential_bytes || limits_.essential_bytes >= limits_.pending_bytes ||
@@ -417,12 +419,27 @@ Decision TaskManager::complete(const storage::Completion& completion) {
     if (!failure_) for (auto& item : tasks_) offer_run(item.second);
     return failure_ ? Decision::Degraded : Decision::Accepted;
 }
+void TaskManager::observe(TaskLifecycleKind kind, Entry& e, bool with_attempt, bool released) noexcept {
+    if (!observer_ || failure_) return;
+    try {
+        TaskLifecycleEvent event{kind, e.row.spec.task_id, e.row.state, e.row.state_version,
+                                 e.row.spec.cpu_slots, e.row.spec.memory_mb, {}, released};
+        if (with_attempt) {
+            const auto* a = current(e);
+            if (!a) return;
+            event.attempt = AttemptLifecycleSnapshot{a->attempt_id, a->worker_id, a->session_id,
+                a->attempt_no, a->state, a->state_version, a->logs_complete};
+        }
+        observer_(event);
+    } catch (...) { /* Diagnostics never authorize or prevent business effects. */ }
+}
 void TaskManager::apply(Entry& e, const Pending& pending) {
     const auto op = pending.envelope.correlation.operation_id;
     std::visit([&](const auto& c) {
         using T = std::decay_t<decltype(c)>;
         if constexpr (std::is_same_v<T, storage::Submit>) {
             e.durable = true; e.row.created_at = c.at; e.row.updated_at = c.at;
+            observe(TaskLifecycleKind::Accepted, e);
             schedule_requested_ = true; emit(EffectKind::SubmitAccepted, &e, pending.client, {}, op);
         } else if constexpr (std::is_same_v<T, storage::Assign>) {
             storage::AttemptRow a; a.task_id = c.expected.task_id; a.attempt_id = c.attempt_id;
@@ -433,13 +450,17 @@ void TaskManager::apply(Entry& e, const Pending& pending) {
             e.row.state = TS::ACTIVE; ++e.row.state_version; e.row.updated_at = c.at; e.row.latest_attempt_id = c.attempt_id;
             e.run_offered = false; e.dispatch = DispatchFact::NoBytesQueued;
             if (!e.reservation || ledger_.commit(*e.reservation) != LedgerStatus::Ok) fail(internal("assignment commit invariant"));
+            observe(TaskLifecycleKind::Assigned, e, true);
         } else if constexpr (std::is_same_v<T, storage::Advance>) {
             auto* a = current(e); a->state = c.to; ++a->state_version;
             if (c.to == AS::STARTING) {
                 a->acknowledged_at = c.at; e.ack_deadline.reset();
                 if (now_ > UINT64_MAX - limits_.start_timeout_ms) { fail(internal("start deadline overflow")); return; }
                 e.start_deadline = now_ + limits_.start_timeout_ms;
-            } else { a->started_at = c.at; e.start_deadline.reset(); }
+            } else {
+                a->started_at = c.at; e.start_deadline.reset();
+                observe(TaskLifecycleKind::Running, e, true);
+            }
         } else if constexpr (std::is_same_v<T, storage::CancelIntent>) {
             e.row.cancel_requested_at = c.at; ++e.row.state_version; e.row.updated_at = c.at;
             emit(EffectKind::CancelAccepted, &e, pending.client, {}, op);
@@ -447,6 +468,7 @@ void TaskManager::apply(Entry& e, const Pending& pending) {
                 emit(EffectKind::CancelEligible, &e, {}, e.reservation->session, op);
         } else if constexpr (std::is_same_v<T, storage::CancelPending>) {
             e.row.state = TS::CANCELLED; ++e.row.state_version; e.row.updated_at = c.at;
+            observe(TaskLifecycleKind::Terminal, e);
             emit(EffectKind::CancelCompleted, &e, pending.client, {}, op);
         } else if constexpr (std::is_same_v<T, storage::Retry>) {
             e.row.state = TS::PENDING; ++e.row.state_version; e.row.updated_at = c.at; e.row.cancel_requested_at.reset();
@@ -464,6 +486,7 @@ void TaskManager::apply(Entry& e, const Pending& pending) {
                 fail(internal("terminal release invariant")); return;
             }
             e.reservation.reset(); schedule_requested_ = true;
+            observe(TaskLifecycleKind::Terminal, e, true, true);
             emit(EffectKind::TerminalVisible, &e, {}, pending.session, op);
             if (pending.client) emit(EffectKind::CancelCompleted, &e, pending.client, {}, op);
         } else {
@@ -667,11 +690,17 @@ void TaskManager::apply_loss(const Pending& pending) {
         if (!a || domain::is_terminal(a->state) || e.pending) { fail(internal("bulk loss serialization invariant")); return; }
         a->state = AS::LOST; ++a->state_version; a->finished_at = cmd.at; a->reason = cmd.reason; a->logs_complete = false;
         e.row.state = TS::FAILED; ++e.row.state_version; e.row.updated_at = cmd.at;
+        e.loss_observation_pending = true;
         e.finalization.reset(); e.ack_deadline.reset(); e.start_deadline.reset();
     }
     if (ledger_.release_session(key) != LedgerStatus::Ok) { fail(internal("bulk durable release invariant")); return; }
     for (auto& item : tasks_) if (bound(item.second, key)) {
-        item.second.reservation.reset(); emit(EffectKind::TerminalVisible, &item.second, {}, key, pending.envelope.correlation.operation_id);
+        item.second.reservation.reset();
+        if (item.second.loss_observation_pending) {
+            item.second.loss_observation_pending = false;
+            observe(TaskLifecycleKind::Terminal, item.second, true, true);
+        }
+        emit(EffectKind::TerminalVisible, &item.second, {}, key, pending.envelope.correlation.operation_id);
     }
     emit(EffectKind::WorkerOffline, nullptr, {}, key, pending.envelope.correlation.operation_id);
     const auto previous = workers_.inspect(key.worker_id);

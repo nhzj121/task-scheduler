@@ -5,14 +5,41 @@
 #include <sys/epoll.h>
 #include <pthread.h>
 #include <stdexcept>
+#include <sstream>
 #include <spdlog/spdlog.h>
 #include "ts/io/signal_fd.h"
 #include "ts/io/timer_fd.h"
 #include "ts/worker/execution_manager.h"
+#include "ts/common/diagnostic_field.h"
 
 namespace ts::worker {
 namespace {
 using Clock = std::chrono::steady_clock;
+void log_lifecycle(const ExecutionLifecycleEvent& event) {
+    if (!spdlog::should_log(spdlog::level::info)) return;
+    std::ostringstream line;
+    line << "event=" << (event.kind == ExecutionLifecycleKind::Started ? "EXEC_STARTED" : "EXEC_FINISHED")
+         << " task_id=" << event.task_id << " attempt_id=" << event.attempt_id
+         << " attempt_no=" << event.attempt_no << " worker_id=" << common::diagnostic_field(event.worker_id)
+         << " session_id=" << event.session_id;
+    if (event.pid) line << " pid=" << *event.pid;
+    if (event.kind == ExecutionLifecycleKind::Started)
+        line << " executable=" << common::diagnostic_field(event.executable);
+    if (event.outcome) {
+        const char* outcome = "LAUNCH_FAILED";
+        switch (*event.outcome) {
+            case protocol::Outcome::Exited: outcome = "EXITED"; break;
+            case protocol::Outcome::Signaled: outcome = "SIGNALED"; break;
+            case protocol::Outcome::TimedOut: outcome = "TIMED_OUT"; break;
+            case protocol::Outcome::Cancelled: outcome = "CANCELLED"; break;
+            case protocol::Outcome::LaunchFailed: break;
+        }
+        line << " outcome=" << outcome;
+    }
+    if (event.exit_code) line << " exit_code=" << *event.exit_code;
+    if (event.term_signal) line << " term_signal=" << *event.term_signal;
+    spdlog::info("{}", line.str());
+}
 template<class T> T checked(common::Result<T> r) {
     if (!r) throw std::runtime_error(r.error().message);
     return std::move(r).value();
@@ -100,7 +127,8 @@ struct Application::Impl {
         // allow normal group termination. No fork path is implemented here.
         execution = checked(ExecutionManager::create(config, session,
             [this](auto frame) { return send(std::move(frame)); },
-            [this]() { return connection ? transport->inspect(*connection) : std::optional<net::ConnectionSnapshot>{}; }));
+            [this]() { return connection ? transport->inspect(*connection) : std::optional<net::ConnectionSnapshot>{}; },
+            log_lifecycle));
         sigset_t mask; ::sigemptyset(&mask); ::sigaddset(&mask, SIGINT); ::sigaddset(&mask, SIGTERM);
         if (::pthread_sigmask(SIG_BLOCK, &mask, &previous_mask) != 0) throw std::runtime_error("Worker signal mask");
         mask_owned = true;

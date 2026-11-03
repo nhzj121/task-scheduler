@@ -1,6 +1,7 @@
 #pragma once
 
 #include <deque>
+#include <functional>
 #include <variant>
 
 #include "ts/controller/worker_registry.h"
@@ -74,11 +75,34 @@ struct DecisionLimits {
 };
 struct RetainedMetadata { std::size_t pending_count{0}, pending_bytes{0}, event_count{0}, event_bytes{0}; };
 
+enum class TaskLifecycleKind { Accepted, Assigned, Running, Terminal };
+struct AttemptLifecycleSnapshot {
+    std::string attempt_id, worker_id, session_id;
+    std::uint32_t attempt_no;
+    domain::AttemptState state;
+    std::uint64_t version;
+    bool logs_complete;
+};
+struct TaskLifecycleEvent {
+    TaskLifecycleKind kind;
+    std::string task_id;
+    domain::TaskState state;
+    std::uint64_t version;
+    std::uint32_t cpu_slots;
+    std::uint64_t memory_mb;
+    std::optional<AttemptLifecycleSnapshot> attempt;
+    bool reservation_released;
+};
+// Owner-thread, non-reentrant, best-effort diagnostics. Retain copies, never
+// references; no scheduling, persistence or transport decisions belong here.
+using TaskLifecycleObserver = std::function<void(const TaskLifecycleEvent&)>;
+
 // Real single-owner decision logic, with no EventLoop/SQLite/socket/runtime calls.
 // Ports outlive this nonmovable owner and never reenter it synchronously.
 class TaskManager final {
 public:
-    TaskManager(PersistencePort& persistence, EffectPort& effects, DecisionLimits limits = {});
+    TaskManager(PersistencePort& persistence, EffectPort& effects, DecisionLimits limits = {},
+                TaskLifecycleObserver observer = {});
     TaskManager(const TaskManager&) = delete;
     TaskManager& operator=(const TaskManager&) = delete;
     // Only recovered PENDING/terminal snapshots; never restore old live sessions.
@@ -123,6 +147,7 @@ private:
         std::deque<TaskEvent> events;
         DispatchFact dispatch{DispatchFact::NoBytesQueued};
         bool run_offered{false};
+        bool loss_observation_pending{false}; // diagnostics only, never business state
         std::optional<std::uint64_t> ack_deadline, start_deadline;
     };
     struct Call;
@@ -134,6 +159,8 @@ private:
     void losses();
     void apply(Entry& entry, const Pending& pending);
     void apply_loss(const Pending& pending);
+    void observe(TaskLifecycleKind kind, Entry& entry, bool with_attempt = false,
+                 bool reservation_released = false) noexcept;
     void offer_run(Entry& entry);
     void emit(EffectKind kind, const Entry* entry = nullptr, std::optional<ClientRequest> client = std::nullopt,
               std::optional<SessionKey> session = std::nullopt, std::uint64_t operation = 0);
@@ -145,6 +172,7 @@ private:
     PersistencePort& persistence_;
     EffectPort& effects_;
     DecisionLimits limits_;
+    TaskLifecycleObserver observer_;
     WorkerRegistry workers_;
     ResourceLedger ledger_;
     std::thread::id owner_;
