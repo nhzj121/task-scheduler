@@ -35,6 +35,7 @@ struct ExecutionManager::Impl {
     domain::SessionId session;
     Send send;
     Room room;
+    ExecutionLifecycleObserver observer;
     std::unique_ptr<runtime::ProcessRuntime> runtime;
     std::map<runtime::RuntimeProcessId, Running> processes;
     std::map<domain::AttemptId, domain::TaskId> seen;
@@ -42,8 +43,22 @@ struct ExecutionManager::Impl {
     std::size_t metadata{0}, tick_bytes{0}, tick_chunks{0};
     std::uint64_t bytes{0}, chunks{0}, grace_ms{1000};
     bool active{false}, stopping{false};
-    Impl(domain::WorkerConfig c, domain::SessionId s, Send sender, Room probe)
-        : config(std::move(c)), session(s), send(std::move(sender)), room(std::move(probe)) {}
+    Impl(domain::WorkerConfig c, domain::SessionId s, Send sender, Room probe, ExecutionLifecycleObserver watch)
+        : config(std::move(c)), session(s), send(std::move(sender)), room(std::move(probe)), observer(std::move(watch)) {}
+    void observe(const protocol::RunTask& task, ExecutionLifecycleKind kind,
+                 std::optional<std::int32_t> pid, const protocol::TaskFinished* result = nullptr) noexcept {
+        if (!observer) return;
+        try {
+            ExecutionLifecycleEvent event{kind, task.task_id.value(), task.attempt_id.value(),
+                task.worker_id.value(), task.session_id.value(), task.executable, task.attempt_no.value(),
+                pid, {}, {}, {}};
+            if (result) {
+                event.outcome = result->outcome;
+                event.exit_code = result->exit_code; event.term_signal = result->term_signal;
+            }
+            observer(event);
+        } catch (...) { /* Diagnostics cannot change child or transport ownership. */ }
+    }
     std::size_t allowance(runtime::RuntimeProcessId id) const {
         if (stopping) return 16384; // invalid session: drain only for local group cleanup
         const auto it = processes.find(id);
@@ -84,7 +99,7 @@ struct ExecutionManager::Impl {
         if (!sent && stopping) return R::success();
         return sent;
     }
-    void finish(const protocol::RunTask& task, const runtime::ProcessCompletion* completion,
+    protocol::TaskFinished finished_message(const protocol::RunTask& task, const runtime::ProcessCompletion* completion,
                 const Running* running, std::string failure = {}) {
         protocol::TaskFinished message{config.worker_id, session, task.task_id, task.attempt_id,
             protocol::Outcome::LaunchFailed, {}, {}, {}, 0, 0, 0, 0};
@@ -114,6 +129,13 @@ struct ExecutionManager::Impl {
                 throw std::runtime_error("runtime internal failure after exec");
             else message.outcome = outcome.exit_code ? protocol::Outcome::Exited : protocol::Outcome::Signaled;
         }
+        return message;
+    }
+    void finish(const protocol::RunTask& task, const runtime::ProcessCompletion* completion,
+                const Running* running, std::string failure = {}) {
+        const auto message = finished_message(task, completion, running, std::move(failure));
+        observe(task, ExecutionLifecycleKind::Finished,
+                completion ? std::optional<std::int32_t>{completion->leader_pid} : std::nullopt, &message);
         net::Outbound frame{wire(message, 0)};
         if (running && running->ordinal) frame.dependency = net::OrderPoint{completion->process_id, running->ordinal};
         checked(send(std::move(frame)));
@@ -131,10 +153,10 @@ struct ExecutionManager::Impl {
 ExecutionManager::ExecutionManager(std::unique_ptr<Impl> impl) : impl_(std::move(impl)) {}
 ExecutionManager::~ExecutionManager() = default;
 common::Result<std::unique_ptr<ExecutionManager>> ExecutionManager::create(
-    domain::WorkerConfig config, domain::SessionId session, Send send, Room room) {
+    domain::WorkerConfig config, domain::SessionId session, Send send, Room room, ExecutionLifecycleObserver observer) {
     using R = common::Result<std::unique_ptr<ExecutionManager>>;
     if (!send || !room) return R::failure("missing execution transport ports");
-    auto impl = std::make_unique<Impl>(std::move(config), session, std::move(send), std::move(room));
+    auto impl = std::make_unique<Impl>(std::move(config), session, std::move(send), std::move(room), std::move(observer));
     auto* owner = impl.get();
     auto runtime = runtime::ProcessRuntime::create(
         [owner](auto id, auto stream, const auto* data, auto size) { return owner->output(id, stream, data, size); },
@@ -245,6 +267,7 @@ common::Result<void> ExecutionManager::tick() {
             auto it = s.processes.find(id); const auto observed = s.runtime->observe(id);
             if (it == s.processes.end() || !observed || !observed->exec_succeeded || observed->leader_pid <= 0)
                 throw std::runtime_error("exec observation lost before START");
+            s.observe(it->second.task, ExecutionLifecycleKind::Started, observed->leader_pid);
             if (!s.stopping) checked(s.send({wire(protocol::TaskStarted{s.config.worker_id, s.session,
                 it->second.task.task_id, it->second.task.attempt_id, observed->leader_pid}, 0)}));
             it->second.started = true;
@@ -257,6 +280,12 @@ common::Result<void> ExecutionManager::tick() {
             if (!s.stopping) {
                 try { s.finish(it->second.task, &done, &it->second); }
                 catch (const std::exception& e) { if (!send_failure) send_failure = e.what(); }
+            } else if (s.observer) {
+                // Same outcome mapping, without encoding/sending on an invalid session.
+                try {
+                    const auto message = s.finished_message(it->second.task, &done, &it->second);
+                    s.observe(it->second.task, ExecutionLifecycleKind::Finished, done.leader_pid, &message);
+                } catch (...) { /* Diagnostic-only completion during local cleanup. */ }
             }
             s.usage = checked(domain::subtract(s.usage, it->second.task.resources));
             s.metadata -= it->second.metadata_bytes; s.processes.erase(it);

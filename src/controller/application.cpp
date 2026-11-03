@@ -7,12 +7,14 @@
 #include <filesystem>
 #include <set>
 #include <stdexcept>
+#include <sstream>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <spdlog/spdlog.h>
 
 #include "ts/controller/task_manager.h"
+#include "ts/common/diagnostic_field.h"
 #include "ts/controller/log_coordinator.h"
 #include "ts/controller/views.h"
 #include "ts/io/signal_fd.h"
@@ -23,6 +25,33 @@ namespace ts::controller {
 namespace {
 using Clock = std::chrono::steady_clock;
 constexpr std::uint64_t query_base = std::uint64_t{1} << 63U;
+void log_lifecycle(const TaskLifecycleEvent& event) {
+    if (!spdlog::should_log(spdlog::level::info)) return;
+    const char* name = "TASK_TERMINAL";
+    switch (event.kind) {
+        case TaskLifecycleKind::Accepted: name = "TASK_ACCEPTED"; break;
+        case TaskLifecycleKind::Assigned: name = "TASK_ASSIGNED"; break;
+        case TaskLifecycleKind::Running: name = "ATTEMPT_RUNNING"; break;
+        case TaskLifecycleKind::Terminal: break;
+    }
+    std::ostringstream line;
+    line << "event=" << name << " task_id=" << event.task_id
+         << " task_state=" << domain::to_string(event.state) << " task_version=" << event.version;
+    if (event.attempt) {
+        const auto& a = *event.attempt;
+        line << " attempt_id=" << a.attempt_id << " attempt_no=" << a.attempt_no
+             << " worker_id=" << common::diagnostic_field(a.worker_id)
+             << " session_id=" << a.session_id << " attempt_state=" << domain::to_string(a.state)
+             << " attempt_version=" << a.version;
+        if (event.kind == TaskLifecycleKind::Terminal)
+            line << " logs_complete=" << (a.logs_complete ? "true" : "false");
+    }
+    if (event.kind == TaskLifecycleKind::Assigned)
+        line << " cpu_slots=" << event.cpu_slots << " memory_mb=" << event.memory_mb;
+    if (event.kind == TaskLifecycleKind::Terminal)
+        line << " reservation=" << (event.reservation_released ? "released" : "none");
+    spdlog::info("{}", line.str());
+}
 std::uint64_t monotonic_ms() { return static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now().time_since_epoch()).count()); }
 template<class T> T checked(common::Result<T> result) {
     if (!result) throw std::runtime_error(result.error().message);
@@ -151,7 +180,7 @@ struct Application::Impl final : PersistencePort, EffectPort {
         decisions.essential_count = std::min(std::size_t{4}, decisions.pending_count - 1);
         decisions.heartbeat_interval_ms = config.heartbeat.interval_ms; decisions.offline_timeout_ms = config.heartbeat.offline_timeout_ms;
         decisions.ack_timeout_ms = config.dispatch.ack_timeout_ms; decisions.start_timeout_ms = config.dispatch.start_timeout_ms;
-        manager = std::make_unique<TaskManager>(*this, *this, decisions);
+        manager = std::make_unique<TaskManager>(*this, *this, decisions, log_lifecycle);
         logs = checked(LogCoordinator::create(config.data_dir, config.queues, *manager, options.log_hook));
         log_token = checked(loop->add(logs->fd(), io::kReadable, [this](const auto&, auto) { log_completions(); }));
         persistence_token = checked(loop->add(channel->fd(), io::kReadable, [this](const auto&, auto) { persistence_ready(); }));
