@@ -1,5 +1,17 @@
 # Test Strategy
 
+## Approved post-v1 capacity admission and wait
+
+Retain prior test names and coverage. New admission_wait cases check zero known
+capacity, joint single-node bounds, busy/OFFLINE advertisements, inactive
+replacements, and side-effect-free submit/retry rejection. Check JSON/plain
+capacity errors and dedicated CLI status independently from uncertain transport
+failure. Wait coverage includes Task-vs-historical-Attempt state, monotonic
+connect/request/sleep budgets, failure classification, signal interruption, fd
+cleanup and actual file/terminal commit gates with real Controller/Worker/SQLite.
+Run full CTest, twenty consecutive executions per new case and affected
+ASan/UBSan/LSan validation; do not weaken existing crash or ordering assertions.
+
 This is the pre-implementation verification contract. Tests must assert observable semantics,
 resource cleanup, persistence order, and bounded behavior, not only happy-path return values.
 

@@ -1,5 +1,11 @@
 # Development and validation
 
+Post-v1 known-capacity admission and taskctl wait are documented in
+[ADMISSION_AND_WAIT.md](ADMISSION_AND_WAIT.md). New tests carry admission_wait.
+Old PENDING fault fixtures explicitly establish accepted OFFLINE capacity;
+the local demo uses busy, specification-valid workloads instead of oversized
+requests. Neither is a production admission bypass.
+
 The accepted core is C++17/Linux. Follow AGENTS and the frozen docs before edits.
 Core dependencies: pthreads, nlohmann_json, SQLite3, spdlog; tests additionally use
 GTest and Python 3.10+. All project targets use strict GCC warnings as errors.

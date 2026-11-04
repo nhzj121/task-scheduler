@@ -65,6 +65,9 @@ class Deployment(unittest.TestCase):
         return result
 
     def test_staged_install_and_configurations(self):
+        guides = list(self.installed.rglob("ADMISSION_AND_WAIT.md"))
+        self.assertEqual(len(guides), 1)
+        self.assertIn("taskctl wait", guides[0].read_text())
         for name in ("controller", "worker", "taskctl"):
             self.assertTrue((self.bin / name).is_file())
             self.assertEqual(subprocess.run([str(self.bin / name), "--help"], capture_output=True).returncode, 0)

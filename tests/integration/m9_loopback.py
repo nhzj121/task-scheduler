@@ -77,6 +77,7 @@ class M9Loopback(Harness):
 
     def test_pending_cancel_commit_gate_idempotence_and_missing_conflicts(self):
         self.gated("hold-task")
+        self.advertise_offline()
         task = self.submit("/bin/true")
         self.arm()
         a, b = self.peer(), self.peer()
@@ -199,6 +200,7 @@ class M9Loopback(Harness):
 
     def test_client_disconnect_and_reused_request_cannot_steal_cancel_retry_response(self):
         self.gated("hold-task")
+        self.advertise_offline()
         task = self.submit("/bin/true")
         self.arm()
         old = self.peer()
@@ -272,6 +274,7 @@ class M9Loopback(Harness):
 
     def test_controller_crash_running_cleanup_before_fresh_registration_and_recovery(self):
         self.controller()
+        self.advertise_offline("worker-a")
         pending = self.submit("--cpu", "100", "/bin/true")
         worker = self.worker("worker-a")
         old_session = self.workers()[0]["session_id"]
@@ -520,6 +523,7 @@ class M9Loopback(Harness):
 
     def test_real_multiworker_projected_choice_and_pending_registration_trigger(self):
         self.controller()
+        self.advertise_offline("worker-a", cpu=2)
         pending = self.submit("/bin/true")
         self.assertEqual(self.get(pending)["task"]["state"], "PENDING")
         first = self.peer(True)
@@ -674,6 +678,7 @@ class M9Loopback(Harness):
                 self.config["data_dir"] = str(self.root / ("assignment-" + mode))
                 self.config_path = self.write_json("controller.json", self.config)
                 self.gated(mode)
+                self.advertise_offline("assignment-worker")
                 task = self.submit("/bin/true")
                 self.arm()
                 peer = self.peer(True)

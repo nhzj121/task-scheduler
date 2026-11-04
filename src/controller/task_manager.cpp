@@ -95,6 +95,23 @@ void TaskManager::fail(storage::Error error) {
     try { static_cast<void>(effects_.emit({EffectKind::FailStop, {}, {}, {}, {}, 0, 0, 0})); }
     catch (...) { /* Already fail-stopped: no further business effects are permitted. */ }
 }
+common::Result<CapacityAdmission> TaskManager::capacity_admission(const domain::ResourceRequest& request) const {
+    using R = common::Result<CapacityAdmission>;
+    if (owner_ != std::this_thread::get_id() || failure_) return R::failure("capacity admission owner/health invariant");
+    std::size_t known = 0;
+    bool fits = false;
+    for (const auto& item : workers_.records()) {
+        // Only activated advertisements survive OFFLINE; pending replacements
+        // never contribute capacity before their old-session LOST commit.
+        const auto& record = item.second;
+        if (!record.capacity) return R::failure("known Worker advertisement missing");
+        ++known;
+        fits = fits || (request.cpu_slots() <= record.capacity->cpu_slots() &&
+                        request.memory_mb() <= record.capacity->memory_mb());
+    }
+    return R::success({known == 0 ? CapacityAdmissionKind::NoKnownWorkers :
+                      fits ? CapacityAdmissionKind::Allowed : CapacityAdmissionKind::NoWorkerFits, known});
+}
 void TaskManager::emit(EffectKind kind, const Entry* entry, std::optional<ClientRequest> client,
                        std::optional<SessionKey> session, std::uint64_t operation) {
     if (failure_) return;

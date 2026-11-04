@@ -160,6 +160,14 @@ class Harness(unittest.TestCase):
     def submit(self, *args):
         return self.cli("submit", *args)[0]["task_id"]
 
+    def advertise_offline(self, worker="raw-worker", cpu=100):
+        # Explicit admission fixture: accepted last-known capacity, no schedulable
+        # Session. Existing durability/PENDING tests must not bypass production.
+        peer = self.peer(True)
+        self.assertTrue(peer.register(worker, cpu=cpu)[2]["accepted"])
+        peer.close()
+        eventually(lambda: any(w["worker_id"] == worker and w["state"] == "OFFLINE" for w in self.workers()))
+
     def get(self, task):
         return self.cli("get", task)[0]
 
@@ -228,6 +236,7 @@ class Harness(unittest.TestCase):
 class M7Loopback(Harness):
     def test_real_vertical_slice_two_workers_and_crash_recovery(self):
         self.controller()
+        self.advertise_offline("worker-a", cpu=3)
         pending = self.submit("--cpu", "3", "/bin/true")
         a = self.worker("worker-a")
         b = self.worker("worker-b")
@@ -314,12 +323,13 @@ class M7Loopback(Harness):
 
     def test_durable_submit_gate_and_disconnected_client(self):
         self.controller("hold-submit")
+        self.advertise_offline()
         peer = self.peer()
         peer.sock.sendall(frame(0x0101, dict(executable="/bin/true", args=[]), 91))
         self.held()
         self.assertFalse(select.select([peer.sock], [], [], 0.15)[0])
         self.assertEqual(self.db("SELECT count(*) FROM tasks"), [(0,)])
-        self.assertEqual(self.workers(), [])  # independent EventLoop request still serves
+        self.assertEqual([w["state"] for w in self.workers()], ["OFFLINE"])  # independent request still serves
         peer.close()
         self.release()
         self.assertEqual(len(self.cli("list")[0]["tasks"]), 1, self.proc.log_path.read_text())
@@ -375,6 +385,7 @@ class M7Loopback(Harness):
         os.close(self.gate_read)
         del self.gate_write
         self.controller("unknown-submit")
+        self.advertise_offline()
         client = self.peer()
         client.sock.sendall(frame(0x0101, dict(executable="/bin/true", args=[]), 18))
         self.held()
@@ -385,6 +396,7 @@ class M7Loopback(Harness):
 
     def test_pagination_history_restore_and_truthful_unsupported(self):
         self.controller()
+        self.advertise_offline()
         task = self.submit("/bin/true")
         self.stop(self.proc)
         # Seed *test fixture* historical committed rows, not production decisions.
@@ -400,6 +412,7 @@ class M7Loopback(Harness):
             for _ in range(206):
                 db.execute("INSERT INTO tasks VALUES(?,'PENDING',0,'/bin/true','[]','{}',NULL,1,0,NULL,NULL,NULL,?,?)", (uid(), now, now))
         self.controller()
+        self.advertise_offline()
         view = self.get(task)
         self.assertEqual(len(view["attempts"]), 205)
         self.assertEqual([a["attempt_no"] for a in view["attempts"]], list(range(1, 206)))
@@ -637,6 +650,7 @@ class M7Loopback(Harness):
 
     def test_retained_metadata_and_session_tombstones_have_lifetime_admission_bounds(self):
         self.controller("metadata-bound")
+        self.advertise_offline()
         task = self.submit("/bin/true")
         self.assertEqual(self.cli("submit", "/bin/true", code=2)[0]["code"], "TEMPORARILY_UNAVAILABLE")
         self.assertEqual(self.get(task)["task"]["state"], "PENDING")

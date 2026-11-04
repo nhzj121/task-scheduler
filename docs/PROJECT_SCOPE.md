@@ -44,6 +44,7 @@ taskctl list
 taskctl logs <task-id> [--attempt N] [--stdout|--stderr|--both]
 taskctl cancel <task-id>
 taskctl retry <task-id>
+taskctl wait <task-id> [--timeout SEC]
 taskctl workers
 ```
 
@@ -123,6 +124,11 @@ injection exposure but does not make remote execution safe for untrusted users.
   `CANCELLED`, `LOST`.
 - Workers: `HEALTHY`, `OFFLINE`.
 - Submit success follows durable `PENDING` insertion.
+- Approved post-v1 admission (ADR-024): submit and FAILED retry require a known
+  single-Worker total-capacity fit, including OFFLINE advertisements; zero known
+  capacity rejects without mutation. Previously accepted PENDING work is retained.
+- Client-only wait (ADR-025) polls existing GET_TASK with an optional monotonic
+  observation deadline; it does not cancel tasks or introduce protocol events.
 - Dispatch follows durable Task `ACTIVE` + Attempt `ASSIGNED` + session binding.
 - Terminal Task+Attempt state commits atomically after required final-log durability.
 - Memory resource release follows terminal commit; resource accounting is not part of SQLite

@@ -74,6 +74,11 @@ struct DecisionLimits {
     std::string log_prefix{"tasks"};
 };
 struct RetainedMetadata { std::size_t pending_count{0}, pending_bytes{0}, event_count{0}, event_bytes{0}; };
+enum class CapacityAdmissionKind { Allowed, NoKnownWorkers, NoWorkerFits };
+struct CapacityAdmission {
+    CapacityAdmissionKind kind;
+    std::size_t known_worker_count;
+};
 
 enum class TaskLifecycleKind { Accepted, Assigned, Running, Terminal };
 struct AttemptLifecycleSnapshot {
@@ -126,6 +131,8 @@ public:
     [[nodiscard]] std::vector<storage::AttemptRow> attempts(const domain::TaskId& id) const;
     [[nodiscard]] bool finalization_pending(const domain::TaskId& id) const;
     [[nodiscard]] RetainedMetadata retained() const;
+    // Read-only client admission policy, not scheduling/remaining-resource logic.
+    [[nodiscard]] common::Result<CapacityAdmission> capacity_admission(const domain::ResourceRequest& request) const;
     [[nodiscard]] bool degraded() const noexcept { return failure_.has_value(); }
     [[nodiscard]] const std::optional<storage::Error>& failure() const noexcept { return failure_; }
     [[nodiscard]] const ResourceLedger& resources() const noexcept { return ledger_; }

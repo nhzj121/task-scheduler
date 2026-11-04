@@ -1,7 +1,10 @@
 #include "ts/client/client.h"
 #include "config_file.h"
+#include "ts/common/diagnostic_field.h"
 
 #include <iostream>
+#include <algorithm>
+#include <thread>
 
 namespace {
 void help() {
@@ -10,6 +13,9 @@ void help() {
         "  get|status TASK_ID\n  list\n  workers\n"
         "  logs TASK_ID [--attempt N] [--stdout|--stderr|--both] [--limit-bytes N]\n"
         "  cancel TASK_ID\n  retry TASK_ID\n"
+        "  wait TASK_ID [--timeout SEC]\n"
+        "wait polls once per second; its timeout stops observation, not the task.\n"
+        "submit/retry capacity rejection exits 3. wait: success 0, failed/cancelled 1, error 2, timeout 124.\n"
         "JSON list/logs output is one response object per page (NDJSON).\n";
 }
 void display(const ts::protocol::Message& response, bool json) {
@@ -42,6 +48,86 @@ void display(const ts::protocol::Message& response, bool json) {
         else throw std::runtime_error("unexpected taskctl response");
     }, response);
 }
+bool capacity_rejection(const ts::protocol::Message& response) {
+    const auto* error = std::get_if<ts::protocol::ErrorResponse>(&response);
+    if (!error || error->code != ts::protocol::ErrorCode::InvalidArgument || !error->details.is_object()) return false;
+    const auto it = error->details.find("reason");
+    return it != error->details.end() && it->is_string() &&
+        (*it == "NO_KNOWN_WORKERS" || *it == "NO_KNOWN_WORKER_FITS");
+}
+int wait_cli(const ts::net::Endpoint& endpoint, bool json, int argc, char** argv, int i) {
+    using namespace ts;
+    using Clock = std::chrono::steady_clock;
+    try {
+        if (i == argc) throw std::invalid_argument("wait requires a Task UUID");
+        const auto parsed = domain::TaskId::parse(argv[i++]);
+        if (!parsed) throw std::invalid_argument(parsed.error().message);
+        const auto task = parsed.value();
+        std::optional<client::Deadline> deadline;
+        if (i < argc) {
+            if (std::string(argv[i++]) != "--timeout" || i == argc)
+                throw std::invalid_argument("use wait TASK_ID [--timeout SEC]");
+            const auto now = Clock::now();
+            const auto maximum = std::chrono::duration_cast<std::chrono::seconds>(Clock::time_point::max() - now).count();
+            const auto seconds = apps::unsigned_value(argv[i++], static_cast<std::uint64_t>(maximum));
+            if (!seconds) throw std::invalid_argument("wait timeout must be positive");
+            deadline = client::Deadline{now + std::chrono::seconds(seconds), false};
+        }
+        if (i != argc) throw std::invalid_argument("unexpected wait argument");
+        auto* budget = deadline ? &*deadline : nullptr;
+        const auto expired = [&] {
+            if (!budget || Clock::now() < budget->at) return false;
+            budget->expired = true; return true;
+        };
+        const auto timed_out = [] { std::cerr << "taskctl: wait deadline expired; task was not cancelled\n"; return 124; };
+        auto connection = client::Client::connect(endpoint, std::chrono::seconds(5), budget);
+        if (!connection) {
+            if (budget && budget->expired) return timed_out();
+            throw std::runtime_error(connection.error().message);
+        }
+        for (;;) {
+            if (expired()) return timed_out();
+            auto response = connection.value()->request(protocol::GetTask{task}, budget);
+            if (!response) {
+                if (budget && budget->expired) return timed_out();
+                throw std::runtime_error(response.error().message);
+            }
+            if (std::holds_alternative<protocol::ErrorResponse>(response.value())) {
+                display(response.value(), json); return 2;
+            }
+            const auto* view = std::get_if<protocol::GetTaskResponse>(&response.value());
+            if (!view || !(view->task.task_id == task)) throw std::runtime_error("wait response Task ID mismatch");
+            if (expired()) return timed_out();
+            if (domain::is_terminal(view->task.state)) {
+                const protocol::Attempt* latest = nullptr;
+                if (view->task.latest_attempt_id) {
+                    const auto found = std::find_if(view->attempts.begin(), view->attempts.end(),
+                        [&](const auto& a) { return a.attempt_id == *view->task.latest_attempt_id; });
+                    if (found == view->attempts.end()) throw std::runtime_error("wait latest recorded Attempt missing");
+                    latest = &*found;
+                }
+                if (expired()) return timed_out();
+                if (json) display(response.value(), true);
+                else {
+                    std::cout << "task_id=" << task.value() << " task_state=" << domain::to_string(view->task.state) << '\n';
+                    if (latest) {
+                        std::cout << "latest_recorded_attempt_id=" << latest->attempt_id.value()
+                            << " attempt_no=" << latest->attempt_no.value() << " attempt_state=" << domain::to_string(latest->state);
+                        if (latest->exit_code) std::cout << " exit_code=" << *latest->exit_code;
+                        if (latest->term_signal) std::cout << " term_signal=" << *latest->term_signal;
+                        if (latest->reason) std::cout << " reason=" << common::diagnostic_field(*latest->reason);
+                        std::cout << " logs_complete=" << (latest->logs_complete ? "true" : "false") << '\n';
+                    }
+                }
+                if (!std::cout) throw std::runtime_error("wait result output failed");
+                return view->task.state == domain::TaskState::SUCCEEDED ? 0 : 1;
+            }
+            auto next = Clock::now() + std::chrono::seconds(1);
+            if (budget) next = std::min(next, budget->at);
+            std::this_thread::sleep_until(next);
+        }
+    } catch (const std::exception& e) { std::cerr << "taskctl: wait: " << e.what() << '\n'; return 2; }
+}
 }
 int main(int argc, char** argv) {
     try {
@@ -57,6 +143,7 @@ int main(int argc, char** argv) {
         }
         if (i == argc) throw std::invalid_argument("missing command; use --help");
         const std::string command = argv[i++];
+        if (command == "wait") return wait_cli(endpoint, json, argc, argv, i);
         std::optional<ts::protocol::Message> request;
         bool both = false;
         if (command == "submit") {
@@ -131,7 +218,9 @@ int main(int argc, char** argv) {
             if (!listed) throw std::runtime_error(listed.error().message);
         } else {
             auto response = connected.value()->request(std::move(*request)); if (!response) throw std::runtime_error(response.error().message);
-            display(response.value(), json); if (std::holds_alternative<ts::protocol::ErrorResponse>(response.value())) return 2;
+            display(response.value(), json);
+            if ((command == "submit" || command == "retry") && capacity_rejection(response.value())) return 3;
+            if (std::holds_alternative<ts::protocol::ErrorResponse>(response.value())) return 2;
         }
         return 0;
     } catch (const std::exception& e) { std::cerr << "taskctl: " << e.what() << '\n'; return 1; }

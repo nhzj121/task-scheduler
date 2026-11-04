@@ -172,11 +172,16 @@ install(PROGRAMS scripts/local_cluster.py scripts/benchmark.py
   scripts/workloads/binary_output.py DESTINATION ${CMAKE_INSTALL_DATADIR}/task-scheduler/tools)
 install(FILES scripts/cluster_support.py DESTINATION ${CMAKE_INSTALL_DATADIR}/task-scheduler/tools)
 install(FILES README.md docs/OPERATIONS.md docs/DEVELOPMENT.md docs/ARCHITECTURE_IMPLEMENTED.md
+  docs/ADMISSION_AND_WAIT.md
   DESTINATION ${CMAKE_INSTALL_DOCDIR})
 
 if(BUILD_TESTING)
   find_package(GTest 1.11 REQUIRED)
   include(GoogleTest)
+  add_executable(ts_admission_tests tests/component/capacity_admission_test.cpp tests/component/client_deadline_test.cpp)
+  target_link_libraries(ts_admission_tests PRIVATE ts_controller ts_client GTest::gtest_main)
+  ts_enable_project_warnings(ts_admission_tests)
+  gtest_discover_tests(ts_admission_tests PROPERTIES LABELS "admission_wait;component" TIMEOUT 20)
 
   add_executable(ts_observability_tests tests/component/lifecycle_observer_test.cpp
     tests/component/execution_observer_test.cpp)
@@ -199,6 +204,17 @@ if(BUILD_TESTING)
   target_link_libraries(ts_m7_fault_controller PRIVATE ts_controller)
   ts_enable_project_warnings(ts_m7_fault_controller)
   find_program(TS_PYTHON_EXECUTABLE NAMES python3 REQUIRED)
+  foreach(admission_case IN ITEMS rejection_plain_json_zero_and_joint_capacity_leave_no_rows
+      offline_capacity_accepts_and_restart_forgets_advertisements retry_rejection_preserves_every_persisted_field
+      busy_pending_wait_timeout_and_interrupt_never_cancel terminal_outcomes_text_json_and_existing_terminal
+      durability_gates_hold_wait_until_terminal_commit lost_is_failed_with_incomplete_logs
+      wait_argument_validation_not_found_and_connection_error raw_pending_history_polling_and_response_identity
+      raw_stalled_query_deadline_close_and_error_reason_types)
+    add_test(NAME AdmissionWait.${admission_case}
+      COMMAND ${TS_PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/integration/admission_wait.py
+      --bin $<TARGET_FILE_DIR:controller> --case test_${admission_case})
+    set_tests_properties(AdmissionWait.${admission_case} PROPERTIES LABELS "admission_wait;integration" TIMEOUT 45)
+  endforeach()
   foreach(lifecycle_case IN ITEMS normal_correlated_pid_and_committed_versions
       terminal_waits_for_file_barrier_and_metadata_commit cancel_timeout_and_launch_failure_remain_distinct
       disconnect_cleanup_is_local_and_recovery_does_not_replay binary_logs_exact_and_payloads_not_mirrored

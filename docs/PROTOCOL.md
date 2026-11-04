@@ -147,6 +147,14 @@ Attempt state.
 
 ### Submit
 
+**Approved post-v1 admission revision (2026-11-04):** before Task ID generation,
+metadata budget charging or Submit persistence, Controller requires at least one
+known Worker whose advertised total CPU and memory jointly fit the request.
+Last activated advertisements retained for OFFLINE Workers count; pending
+replacement advertisements do not. Occupancy, concurrency and health do not
+affect this specification check. No advertisements means rejection. Already
+accepted/recovered PENDING Tasks are never retroactively rejected.
+
 `CLIENT.SUBMIT_TASK` (`0x0101`):
 
 ```json
@@ -319,6 +327,11 @@ Cancelling `SUCCEEDED` or `FAILED` returns `ERROR_RESPONSE` with `CONFLICT`.
 
 Only `FAILED` is retryable in v1.
 
+The approved post-v1 admission policy also applies to retry: check existence and
+FAILED state first, then original resource requirements against known capacity.
+Rejection leaves Task/Attempt rows, versions, cancellation intent and logs intact.
+New Attempts still arise only through normal scheduling after retry commits.
+
 ### List Workers
 
 `CLIENT.LIST_WORKERS` (`0x010D`):
@@ -369,6 +382,21 @@ not an invalidated session; this does not introduce persisted Worker state.
 
 Stable v1 codes are `INVALID_ARGUMENT`, `NOT_FOUND`, `CONFLICT`, `UNSUPPORTED`,
 `TEMPORARILY_UNAVAILABLE`, and `INTERNAL`. Messages are diagnostic and not machine contracts.
+
+Post-v1 submit/retry capacity rejection reuses INVALID_ARGUMENT with retryable=false
+and an open details object containing reason, requested_cpu_slots,
+requested_memory_mb and known_worker_count. Stable reason strings are
+NO_KNOWN_WORKERS (count zero) and NO_KNOWN_WORKER_FITS (nonzero count, no single
+node fits both dimensions). INVALID_ARGUMENT here includes the approved
+operational admission constraint, not just malformed numeric fields. No Task
+UUID or success response is returned; a submit rejection inserts no rows.
+This error is deterministic for that request's checked snapshot; network loss
+without a response still leaves submission outcome potentially unknown.
+No message ID, ErrorCode enum token, schema field or frame rule changes.
+
+taskctl wait uses ordinary repeated GET_TASK requests; it introduces no wire
+subscription or unsolicited response. A returned terminal snapshot may include
+LOST/FAILED and incomplete logs. Client observation timeout never sends CANCEL.
 
 ## Worker protocol
 

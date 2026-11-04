@@ -289,11 +289,26 @@ struct Application::Impl final : PersistencePort, EffectPort {
         query.envelope.response_bytes = options.limits.reply_bytes;
         queries.emplace(query.envelope.correlation.operation_id, std::move(query)); return true;
     }
+    bool admit_capacity(ClientRequest client, const domain::ResourceRequest& request) {
+        const auto result = manager->capacity_admission(request);
+        if (!result) { fail(result.error().message); return false; }
+        const auto& admission = result.value();
+        if (admission.kind == CapacityAdmissionKind::Allowed) return true;
+        const bool empty = admission.kind == CapacityAdmissionKind::NoKnownWorkers;
+        reply(client, protocol::ErrorResponse{protocol::ErrorCode::InvalidArgument,
+            empty ? "No known Worker capacity advertisements; submission/retry rejected" :
+                    "No known Worker can satisfy the requested CPU/memory capacity",
+            false, {{"reason", empty ? "NO_KNOWN_WORKERS" : "NO_KNOWN_WORKER_FITS"},
+                    {"requested_cpu_slots", request.cpu_slots()}, {"requested_memory_mb", request.memory_mb()},
+                    {"known_worker_count", admission.known_worker_count}}});
+        return false;
+    }
     void client_message(ClientRequest client, protocol::Message message) {
         if (!ready || fatal || stop_requested || stopping) { error(client, protocol::ErrorCode::TemporarilyUnavailable, "Controller is not ready", true); return; }
         std::visit([&](auto&& request) {
             using T = std::decay_t<decltype(request)>;
             if constexpr (std::is_same_v<T, protocol::SubmitTask>) {
+                if (!admit_capacity(client, request.resources)) return;
                 const auto id = domain::TaskId::generate();
                 storage::TaskSpec spec{id.value(), request.executable, request.args, request.env, request.cwd,
                     request.resources.cpu_slots(), request.resources.memory_mb(), request.timeout_ms};
@@ -319,6 +334,13 @@ struct Application::Impl final : PersistencePort, EffectPort {
                 constexpr bool retry = std::is_same_v<T, protocol::RetryTask>;
                 const auto row = manager->task(request.task_id);
                 if (!row) { error(client, protocol::ErrorCode::NotFound, "Task not found"); return; }
+                if (retry) {
+                    if (row->state != domain::TaskState::FAILED) {
+                        error(client, protocol::ErrorCode::Conflict, "Only FAILED Tasks may be retried"); return;
+                    }
+                    if (!admit_capacity(client, domain::ResourceRequest::create(
+                            row->spec.cpu_slots, row->spec.memory_mb).value())) return;
+                }
                 if (!retry && row->state == domain::TaskState::CANCELLED) {
                     reply(client, protocol::CancelTaskResponse{request.task_id, protocol::CancelStatus::AlreadyCancelled,
                         domain::TaskState::CANCELLED, row->cancel_requested_at ?
