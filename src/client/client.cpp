@@ -17,14 +17,31 @@ struct Client::Impl {
     explicit Impl(std::unique_ptr<io::EventLoop> event_loop, std::chrono::milliseconds deadline)
         : loop(std::move(event_loop)), timeout(deadline) {}
     ~Impl() { transport.reset(); }
-    bool wait(const std::function<bool()>& ready) {
-        const auto end = std::chrono::steady_clock::now() + timeout;
-        while (!ready() && !error && std::chrono::steady_clock::now() < end) {
-            const auto polled = loop->poll_once(50);
+    bool budget_expired(Deadline* deadline) {
+        if (!deadline || std::chrono::steady_clock::now() < deadline->at) return false;
+        deadline->expired = true; error = "overall wait deadline expired"; return true;
+    }
+    bool wait(const std::function<bool()>& ready, Deadline* deadline) {
+        using Clock = std::chrono::steady_clock;
+        const auto now = Clock::now();
+        const auto normal_end = now + std::min(timeout, std::chrono::duration_cast<std::chrono::milliseconds>(Clock::time_point::max() - now));
+        const auto end = deadline ? std::min(normal_end, deadline->at) : normal_end;
+        for (;;) {
+            if (error) return false; // a completed failure precedes budget expiry
+            if (Clock::now() >= end) {
+                // Attribute a late wakeup to the earlier deadline, even if both
+                // deadlines have elapsed while this process was descheduled.
+                if (deadline && deadline->at <= normal_end) {
+                    deadline->expired = true; error = "overall wait deadline expired";
+                } else error = "TCP request deadline expired; a submitted Task may already have committed";
+                return false;
+            }
+            if (ready()) return true;
+            const auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(end - Clock::now()).count();
+            const auto poll_ms = static_cast<int>(std::max<std::int64_t>(1, std::min<std::int64_t>(50, remaining)));
+            const auto polled = loop->poll_once(poll_ms);
             if (!polled) error = polled.error().message;
         }
-        if (!ready() && !error) error = "TCP request deadline expired; a submitted Task may already have committed";
-        return ready() && !error;
     }
     std::size_t bytes(net::ConnectionId id, std::string_view data) {
         auto fed = parser.feed(data, [&](protocol::Frame&& frame) {
@@ -46,7 +63,7 @@ struct Client::Impl {
 };
 Client::Client(std::unique_ptr<Impl> impl) : impl_(std::move(impl)) {}
 Client::~Client() = default;
-common::Result<std::unique_ptr<Client>> Client::connect(net::Endpoint endpoint, std::chrono::milliseconds timeout) {
+common::Result<std::unique_ptr<Client>> Client::connect(net::Endpoint endpoint, std::chrono::milliseconds timeout, Deadline* deadline) {
     using R = common::Result<std::unique_ptr<Client>>;
     if (timeout.count() <= 0) return R::failure("client timeout must be positive");
     auto loop = io::EventLoop::create(); if (!loop) return R::failure(loop.error().message);
@@ -58,25 +75,28 @@ common::Result<std::unique_ptr<Client>> Client::connect(net::Endpoint endpoint, 
     });
     if (!transport) return R::failure(transport.error().message);
     impl->transport = std::move(transport).value();
+    if (impl->budget_expired(deadline)) return R::failure(*impl->error);
     const auto connected = impl->transport->connect(endpoint);
     if (!connected) return R::failure(connected.error().message);
-    if (!impl->wait([&] { return impl->connected; })) return R::failure(*impl->error);
+    if (!impl->wait([&] { return impl->connected; }, deadline)) return R::failure(*impl->error);
     return R::success(std::unique_ptr<Client>(new Client(std::move(impl))));
 }
-common::Result<protocol::Message> Client::request(protocol::Message message) {
+common::Result<protocol::Message> Client::request(protocol::Message message, Deadline* deadline) {
     using R = common::Result<protocol::Message>;
     auto& s = *impl_;
     if (s.error) return R::failure(*s.error);
+    if (s.budget_expired(deadline)) return R::failure(*s.error);
     if (s.pending_id || s.next_id == UINT64_MAX) return R::failure("client request identity unavailable");
     const auto id = s.next_id++;
     auto frame = protocol::encode_message(message, id, protocol::Direction::ClientToController);
     if (!frame) return R::failure(frame.error().message);
     auto encoded = protocol::encode_frame(frame.value(), protocol::Direction::ClientToController);
     if (!encoded) return R::failure(encoded.error().message);
+    if (s.budget_expired(deadline)) return R::failure(*s.error);
     s.pending_id = id; s.expected = protocol::response_type(frame.value().header.type); s.reply.reset();
     const auto sent = s.transport->send(*s.connection, {std::move(encoded).value()});
     if (!sent) { s.error = sent.error().message; return R::failure(*s.error); }
-    if (!s.wait([&] { return s.reply.has_value(); })) return R::failure(*s.error);
+    if (!s.wait([&] { return s.reply.has_value(); }, deadline)) return R::failure(*s.error);
     auto reply = std::move(*s.reply); s.reply.reset(); s.pending_id = 0;
     return R::success(std::move(reply));
 }

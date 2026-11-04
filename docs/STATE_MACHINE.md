@@ -19,6 +19,11 @@ domain states and must not be exposed as such.
 
 ## Task state machine
 
+Approved post-v1 client capacity admission is a prerequisite to new submit and
+FAILED retry (ADR-024), before their persistent transitions. Rejection performs
+no transition and does not retroactively re-admit or cancel existing PENDING
+tasks. Task/Attempt states and all transition/commit-order rules below are unchanged.
+
 ```mermaid
 stateDiagram-v2
     [*] --> PENDING: submit transaction committed

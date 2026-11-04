@@ -261,6 +261,7 @@ sequenceDiagram
     participant P as Child process group
 
     CLI->>EL: CLIENT.SUBMIT_TASK
+    EL->>EL: known single-Worker total-capacity admission (accepted path)
     EL->>DB: insert Task PENDING
     DB-->>EL: commit OK
     EL-->>CLI: SUBMIT_TASK_RESPONSE
@@ -537,6 +538,15 @@ it to a normal reservation. Terminal/session-loss commit precedes release. This 
 Controller memory state, not cross-medium ACID state and not cgroup enforcement.
 
 ## EventLoop rules
+
+Approved post-v1 client admission is evaluated on the EventLoop before Submit
+persistence and before a FAILED retry is issued. It uses last activated known
+capacity, including OFFLINE advertisements, not available-resource scheduling
+snapshots. Zero advertisements or no joint single-node fit returns the existing
+error response without Task creation or retry mutation. It changes neither the
+placement algorithm nor already accepted/recovered PENDING work; see ADR-024.
+taskctl wait is client-side sequential GET_TASK polling with a monotonic
+observation deadline; it adds no Controller thread, protocol event or persisted state.
 
 - All sockets, pipe ends, signalfd, timerfds, and eventfds are non-blocking where applicable.
 - LT callbacks drain reads, accepts, signals, timer counts, and completion queues until

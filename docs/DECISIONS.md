@@ -341,7 +341,36 @@ baseline; production implementation still requires explicit human approval.
   make the Controller fail-stop. This is local durability, not replication.
 - **Revisit when:** A different metadata store or replicated Controller is approved.
 
-## Unresolved decisions
+## ADR-024 — Post-v1 known-capacity admission
+
+- **Status:** Accepted by explicit development authorization, 2026-11-04.
+- **Decision:** Client submit and FAILED retry require a single known Worker
+  total-capacity advertisement fitting CPU and memory together. Include OFFLINE
+  last activated advertisements, exclude pending replacements; zero known Workers
+  rejects. Use existing INVALID_ARGUMENT/details with stable capacity reasons.
+- **Consequences:** This changes client admission policy, not domain transitions
+  or wire schemas. Submit rejection precedes UUID/budget/persistence; retry
+  rejection preserves existing history. No re-admission/cancellation of already
+  accepted or recovered PENDING tasks. Controller restart clears advertisements.
+  Busy nodes can still admit; later capacity loss does not revoke acceptance.
+- **Rejected:** Multi-node capacity summation, remaining-resource admission,
+  automatic cancellation, persisted Worker advertisements or automatic resubmit.
+
+## ADR-025 — Client-only wait
+
+- **Status:** Accepted by explicit development authorization, 2026-11-04.
+- **Decision:** taskctl wait polls existing GET_TASK once per second, waits on
+  Task state, prints one terminal result, and does not follow output or retry
+  communication. Optional positive-second overall timeout uses a caller-owned
+  monotonic budget across connect, requests and sleep; default has no overall cap.
+- **Consequences:** Successful workload exits 0, failed/cancelled exits 1, wait
+  errors 2, overall timeout 124, normal shell SIGINT status 130. Observation never
+  changes a Task. Another user's retry between polls can hide an earlier FAILED
+  observation. Historical Attempt completion alone cannot terminate wait.
+- **Rejected:** New subscription messages, wall-clock deadlines, automatic
+  reconnect, command execution or cancellation from wait.
+
+## Current unresolved decisions
 
 There is no unresolved core semantic decision in the v1 architecture baseline. Numeric tuning
 (queue byte limits, page size within documented maxima, reconnect backoff, and operational

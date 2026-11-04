@@ -10,9 +10,19 @@ import cluster_support as cluster
 
 
 def demo(state):
-    pending = cluster.cli(state, "submit", "--cpu", "100", "/bin/true")[0]["task_id"]
+    # Valid specifications wait for currently occupied slots; oversized requests
+    # are now rejected before Task creation.
+    workers = cluster.cli(state, "workers")[0]["workers"]
+    blockers = [cluster.cli(state, "submit", "--cpu", str(w["capacity"]["cpu_slots"]),
+                            "/bin/sleep", "30")[0]["task_id"] for w in workers]
+    cluster.eventually(lambda: all(w["reserved"]["cpu_slots"] == w["capacity"]["cpu_slots"]
+                                  for w in cluster.cli(state, "workers")[0]["workers"]))
+    pending = cluster.cli(state, "submit", "--cpu", "1", "/bin/true")[0]["task_id"]
     cluster.require(cluster.cli(state, "get", pending)[0]["task"]["state"] == "PENDING")
     cluster.require(cluster.cli(state, "cancel", pending)[0]["status"] == "completed")
+    for blocker in blockers:
+        cluster.cli(state, "cancel", blocker)
+        cluster.terminal(state, blocker, "CANCELLED")
     task = cluster.cli(state, "submit", "/bin/true")[0]["task_id"]
     view = cluster.terminal(state, task)
     cluster.require(view["attempts"][-1]["logs_complete"])
